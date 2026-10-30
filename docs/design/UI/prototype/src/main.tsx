@@ -20,8 +20,8 @@ const SHELLED: Partial<Record<Route, () => JSX.Element>> = {
 
 // Cảnh trần, dùng để dựng ảnh cho chế độ nhẹ 2D.
 const BareScene = () => {
-  const p = window as unknown as { __variant?: 'a' | 'b' | 'c'; __emotion?: Emotion };
-  return <div style={{ position: 'fixed', inset: 0 }}><Scene variant={p.__variant ?? 'a'} emotion={p.__emotion ?? 'NEUTRAL'} activity="idle" /></div>;
+  const p = window as unknown as { __variant?: 'a' | 'b' | 'c'; __emotion?: Emotion; __activity?: 'thinking' };
+  return <div style={{ position: 'fixed', inset: 0 }}><Scene variant={p.__variant ?? 'a'} emotion={p.__emotion ?? 'NEUTRAL'} activity={p.__activity ?? 'idle'} /></div>;
 };
 
 const App = () => {

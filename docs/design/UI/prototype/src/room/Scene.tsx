@@ -1,234 +1,163 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import type { Emotion } from '../data';
+import { loadCast, loadRoom, Variant } from './assets';
+import floorDiff from '../assets/3d/tex/laminate_floor_02_diff.webp';
+import floorNor from '../assets/3d/tex/laminate_floor_02_nor.webp';
+import floorRough from '../assets/3d/tex/laminate_floor_02_rough.webp';
+import wallDiff from '../assets/3d/tex/painted_plaster_wall_diff.webp';
+import wallNor from '../assets/3d/tex/painted_plaster_wall_nor.webp';
 
 export type Activity = 'idle' | 'listening' | 'thinking' | 'responding';
 
-// Nhân vật dựng hoàn toàn bằng hình khối để demo không phụ thuộc tài sản có giấy phép.
-// Bản thật thay bằng GLB theo quy trình ở tài liệu 06, mục 4.4.
-interface Pose { lean: number; headX: number; headY: number; headZ: number; shoulder: number; clasp: number; brow: number; mouth: number }
+// Nhân vật: Microsoft Rocketbox (MIT). Nội thất và vật liệu: Poly Haven (CC0). Xem tools/ để dựng lại.
 
-const POSES: Record<Emotion, Pose> = {
-  NEUTRAL: { lean: 0.04, headX: 0.02, headY: 0, headZ: 0, shoulder: 0, clasp: 0.2, brow: 0, mouth: -0.2 },
-  ANXIOUS: { lean: 0.12, headX: 0.14, headY: 0, headZ: 0.03, shoulder: 0.02, clasp: 1, brow: 0.5, mouth: 0.25 },
-  SAD: { lean: 0.2, headX: 0.32, headY: -0.08, headZ: 0.04, shoulder: 0.01, clasp: 0.8, brow: 0.8, mouth: 0.6 },
-  TENSE: { lean: -0.02, headX: 0.04, headY: 0.1, headZ: 0, shoulder: 0.028, clasp: 0.6, brow: -0.4, mouth: 0.15 },
-  RELIEVED: { lean: 0, headX: -0.03, headY: 0, headZ: -0.03, shoulder: -0.008, clasp: 0, brow: 0.15, mouth: -0.85 },
-  HESITANT: { lean: 0.08, headX: 0.12, headY: 0.24, headZ: 0.03, shoulder: 0.012, clasp: 0.7, brow: 0.3, mouth: 0.05 },
+// Mỗi cảm xúc ứng với một động tác ngồi có sẵn và các biểu cảm khuôn mặt chuẩn ARKit.
+const BODY: Record<Emotion, string> = { NEUTRAL: 'breathe', ANXIOUS: 'anxious', SAD: 'neutral', TENSE: 'waiting', RELIEVED: 'relaxed', HESITANT: 'breathe' };
+const FACE: Record<Emotion, Record<string, number>> = {
+  NEUTRAL: {},
+  ANXIOUS: { BrowInnerUp: .55, MouthPress: .3 },
+  SAD: { BrowInnerUp: .8, MouthFrown: .45 },
+  TENSE: { BrowDown: .5, MouthPress: .5 },
+  RELIEVED: { MouthSmile: .42, BrowInnerUp: .1 },
+  HESITANT: { BrowInnerUp: .35, MouthPress: .2 },
 };
+// Vị trí hông khi ngồi trên ghế, tính theo mét trong phòng
+const SEAT_HIP: [number, number, number] = [0, .58, -1.0];
+const ANKLE = .09;
+const THIGH_LIFT = .42;
+const CAM_Z = 1.15;
+// [cúi đầu, quay đầu]. Giá trị âm ở cột đầu là ngẩng lên nhìn người tham vấn.
+const GAZE: Record<Emotion, [number, number]> = { NEUTRAL: [-.3, 0], ANXIOUS: [-.14, 0], SAD: [.06, -.05], TENSE: [-.24, .08], RELIEVED: [-.32, 0], HESITANT: [-.12, .2] };
 
-const LOOKS = {
-  a: { top: '#6F8FA3', pants: '#3D4650', hair: '#2B211D', long: true },
-  b: { top: '#7C8A6C', pants: '#3A3F46', hair: '#231E1C', long: false },
-  c: { top: '#B98A6A', pants: '#46505A', hair: '#33261F', long: true },
-};
+const useTex = (url: string, repeat: [number, number], color = false) => useMemo(() => {
+  const t = new THREE.TextureLoader().load(url);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(...repeat);
+  t.anisotropy = 8;
+  if (color) t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}, [url]);
 
-const SKIN = '#E7BFA0';
-
-const canvasTex = (w: number, h: number, draw: (g: CanvasRenderingContext2D) => void, repeat?: [number, number]) => {
+const canvasTex = (w: number, h: number, draw: (g: CanvasRenderingContext2D) => void) => {
   const c = document.createElement('canvas');
   c.width = w; c.height = h;
   draw(c.getContext('2d')!);
   const t = new THREE.CanvasTexture(c);
   t.colorSpace = THREE.SRGBColorSpace;
   t.anisotropy = 8;
-  if (repeat) { t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...repeat); }
   return t;
 };
 
-const useTextures = () => useMemo(() => {
-  const wood = canvasTex(512, 512, g => {
-    g.fillStyle = '#9C7A5B'; g.fillRect(0, 0, 512, 512);
-    for (let y = 0; y < 8; y++) {
-      const off = (y % 2) * 180;
-      for (let x = -1; x < 4; x++) {
-        const shade = 96 + (((x + 2) * 37 + y * 53) % 34);
-        g.fillStyle = `rgb(${shade + 40},${shade + 8},${shade - 28})`;
-        g.fillRect(x * 256 + off, y * 64, 254, 62);
-        g.strokeStyle = 'rgba(70,45,25,.10)';
-        for (let k = 0; k < 7; k++) { g.beginPath(); const yy = y * 64 + 6 + k * 8; g.moveTo(x * 256 + off, yy); g.bezierCurveTo(x * 256 + off + 80, yy + 4, x * 256 + off + 170, yy - 4, x * 256 + off + 254, yy + 1); g.stroke(); }
-      }
-    }
-  }, [3, 3]);
-  const sky = canvasTex(512, 640, g => {
-    const grd = g.createLinearGradient(0, 0, 0, 640);
-    grd.addColorStop(0, '#CFE4EC'); grd.addColorStop(.55, '#F3EBD8'); grd.addColorStop(1, '#DDE3C8');
-    g.fillStyle = grd; g.fillRect(0, 0, 512, 640);
-    g.filter = 'blur(14px)';
-    [[70, 470, 120, '#8FAE8B'], [210, 520, 150, '#7E9F7E'], [380, 480, 130, '#94B38F'], [470, 560, 120, '#7A9A7B']].forEach(([x, y, r, c]) => {
-      g.fillStyle = c as string; g.beginPath(); g.arc(x as number, y as number, r as number, 0, Math.PI * 2); g.fill();
-    });
-  });
-  const rug = canvasTex(512, 512, g => {
-    g.fillStyle = '#C9CFC6'; g.beginPath(); g.arc(256, 256, 256, 0, Math.PI * 2); g.fill();
-    ['#B5BDB3', '#D7DBD2', '#AAB4AB'].forEach((c, i) => { g.strokeStyle = c; g.lineWidth = 14; g.beginPath(); g.arc(256, 256, 226 - i * 66, 0, Math.PI * 2); g.stroke(); });
-  });
-  const art = canvasTex(256, 320, g => {
-    g.fillStyle = '#EDE7DA'; g.fillRect(0, 0, 256, 320);
-    g.fillStyle = '#7F9EA3'; g.beginPath(); g.ellipse(128, 215, 150, 66, 0, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#C9A26A'; g.beginPath(); g.arc(160, 120, 44, 0, Math.PI * 2); g.fill();
-    g.fillStyle = '#4F7377'; g.beginPath(); g.ellipse(70, 262, 130, 44, 0, 0, Math.PI * 2); g.fill();
-  });
-  const wall = canvasTex(256, 256, g => {
-    g.fillStyle = '#C6D4D0'; g.fillRect(0, 0, 256, 256);
-    for (let i = 0; i < 1400; i++) { g.fillStyle = `rgba(90,110,105,${Math.random() * .025})`; g.fillRect(Math.random() * 256, Math.random() * 256, 2, 2); }
-  }, [4, 2]);
-  return { wood, sky, rug, art, wall };
-}, []);
-
-const RBox = ({ size, radius = 0.03, color, roughness = 0.75, ...rest }: { size: [number, number, number]; radius?: number; color: string; roughness?: number } & Record<string, unknown>) => {
+const RBox = ({ size, radius = .02, color, roughness = .7, ...rest }: { size: [number, number, number]; radius?: number; color: string; roughness?: number } & Record<string, unknown>) => {
   const geo = useMemo(() => new RoundedBoxGeometry(size[0], size[1], size[2], 3, radius), [size[0], size[1], size[2], radius]);
   return <mesh geometry={geo} castShadow receiveShadow {...rest}><meshStandardMaterial color={color} roughness={roughness} /></mesh>;
 };
 
-const Limb = ({ r, len, color, ...rest }: { r: number; len: number; color: string } & Record<string, unknown>) => (
-  <mesh castShadow position={[0, -len / 2, 0]} {...rest}>
-    <capsuleGeometry args={[r, len, 6, 14]} />
-    <meshStandardMaterial color={color} roughness={0.72} />
-  </mesh>
-);
-
-const torsoProfile: [number, number][] = [[0.001, -0.02], [0.13, 0], [0.142, 0.06], [0.132, 0.14], [0.14, 0.24], [0.166, 0.34], [0.184, 0.41], [0.172, 0.455], [0.118, 0.49], [0.06, 0.51], [0.001, 0.515]];
-const torsoGeo = new THREE.LatheGeometry(new THREE.SplineCurve(torsoProfile.map(([x, y]) => new THREE.Vector2(x, y))).getPoints(40), 40);
-
-const Character = ({ variant, emotion, activity }: { variant: keyof typeof LOOKS; emotion: Emotion; activity: Activity }) => {
-  const look = LOOKS[variant];
-  const spine = useRef<THREE.Group>(null!), head = useRef<THREE.Group>(null!), torso = useRef<THREE.Group>(null!);
-  const armL = useRef<THREE.Group>(null!), armR = useRef<THREE.Group>(null!), foreL = useRef<THREE.Group>(null!), foreR = useRef<THREE.Group>(null!);
-  const browL = useRef<THREE.Mesh>(null!), browR = useRef<THREE.Mesh>(null!), mouth = useRef<THREE.Mesh>(null!);
-  const eyeL = useRef<THREE.Group>(null!), eyeR = useRef<THREE.Group>(null!);
-  const cur = useRef<Pose>({ ...POSES.NEUTRAL });
-  const blink = useRef({ next: 2.2, t: 0 });
-
-  useFrame((state, dt) => {
-    const t = state.clock.elapsedTime, k = 1 - Math.exp(-dt * 3.2), p = cur.current, tgt = POSES[emotion];
-    (Object.keys(p) as (keyof Pose)[]).forEach(key => { p[key] += (tgt[key] - p[key]) * k; });
-
-    const breathe = Math.sin(t * 1.5);
-    let nodX = 0, tiltZ = 0, gesture = 0, turnY = 0;
-    if (activity === 'listening') nodX = Math.max(0, Math.sin(t * 1.3)) * 0.035;
-    if (activity === 'thinking') { tiltZ = 0.08; nodX = -0.05; turnY = -0.12 + Math.sin(t * 0.7) * 0.03; }
-    if (activity === 'responding') { nodX = Math.sin(t * 3.4) * 0.02; turnY = Math.sin(t * 1.5) * 0.04; gesture = (Math.sin(t * 2.3) + 1) * 0.5; }
-
-    spine.current.rotation.x = p.lean + breathe * 0.006;
-    torso.current.scale.set(1 + breathe * 0.008, 1 + breathe * 0.004, 1 + breathe * 0.012);
-    head.current.rotation.set(p.headX + nodX + Math.sin(t * 0.43) * 0.012, p.headY + turnY + Math.sin(t * 0.31) * 0.02, p.headZ + tiltZ);
-
-    // Tay đặt trên đùi. Khi lo lắng hai bàn tay khép lại với nhau.
-    const sh = p.shoulder;
-    armL.current.position.y = 0.43 + sh; armR.current.position.y = 0.43 + sh;
-    armL.current.rotation.set(-0.42 - p.clasp * 0.12, 0, -0.05 + p.clasp * 0.08);
-    armR.current.rotation.set(-0.42 - p.clasp * 0.12, 0, 0.05 - p.clasp * 0.08);
-    foreL.current.rotation.set(-0.98 - p.clasp * 0.14 - gesture * 0.12, 0, 0.34 + p.clasp * 0.42);
-    foreR.current.rotation.set(-0.98 - p.clasp * 0.14, 0, -0.34 - p.clasp * 0.42);
-
-    browL.current.rotation.z = 1.5708 - p.brow * 0.3; browR.current.rotation.z = 1.5708 + p.brow * 0.3;
-    browL.current.position.y = 0.05 + p.brow * 0.006; browR.current.position.y = 0.05 + p.brow * 0.006;
-    mouth.current.scale.set(1, Math.max(0.12, Math.abs(p.mouth)) * Math.sign(p.mouth || 1), 1);
-    mouth.current.position.y = -0.058 + p.mouth * 0.007;
-
-    const b = blink.current;
-    b.next -= dt;
-    if (b.next < 0) { b.t = 0.14; b.next = 2 + Math.random() * 3.5; }
-    b.t = Math.max(0, b.t - dt);
-    const open = b.t > 0 ? 0.1 : 1;
-    eyeL.current.scale.y = open; eyeR.current.scale.y = open;
-  });
-
-  return (
-    <group position={[0, 0.56, -1.0]}>
-      {/* Hông và chân */}
-      <mesh castShadow position={[0, 0.03, 0]} scale={[1.2, 0.72, 1]}><sphereGeometry args={[0.15, 24, 18]} /><meshStandardMaterial color={look.pants} roughness={0.8} /></mesh>
-      {[-1, 1].map(s => (
-        <group key={s} position={[s * 0.085, 0.02, 0.02]}>
-          <group rotation={[-1.5, 0, s * 0.04]}><Limb r={0.068} len={0.36} color={look.pants} /></group>
-          <group position={[s * 0.015, 0, 0.4]} rotation={[0.08, 0, 0]}>
-            <Limb r={0.054} len={0.37} color={look.pants} />
-            <mesh castShadow position={[0, -0.47, 0.055]} scale={[0.75, 0.5, 1.45]}><sphereGeometry args={[0.07, 18, 14]} /><meshStandardMaterial color="#EDE8DF" roughness={0.65} /></mesh>
-          </group>
-        </group>
-      ))}
-
-      <group ref={spine}>
-        <group ref={torso}>
-          <mesh castShadow geometry={torsoGeo} scale={[1, 1, 0.68]}><meshStandardMaterial color={look.top} roughness={0.88} /></mesh>
-        </group>
-
-        <group ref={armL} position={[-0.178, 0.43, 0]}>
-          <Limb r={0.041} len={0.25} color={look.top} />
-          <group ref={foreL} position={[0, -0.27, 0]}>
-            <Limb r={0.035} len={0.22} color={look.top} />
-            <mesh castShadow position={[0, -0.29, 0]} scale={[0.85, 1.15, 0.7]}><sphereGeometry args={[0.044, 16, 12]} /><meshStandardMaterial color={SKIN} roughness={0.6} /></mesh>
-          </group>
-        </group>
-        <group ref={armR} position={[0.178, 0.43, 0]}>
-          <Limb r={0.041} len={0.25} color={look.top} />
-          <group ref={foreR} position={[0, -0.27, 0]}>
-            <Limb r={0.035} len={0.22} color={look.top} />
-            <mesh castShadow position={[0, -0.29, 0]} scale={[0.85, 1.15, 0.7]}><sphereGeometry args={[0.044, 16, 12]} /><meshStandardMaterial color={SKIN} roughness={0.6} /></mesh>
-          </group>
-        </group>
-
-        <mesh castShadow position={[0, 0.515, 0.005]}><cylinderGeometry args={[0.046, 0.054, 0.1, 16]} /><meshStandardMaterial color={SKIN} roughness={0.6} /></mesh>
-
-        <group ref={head} position={[0, 0.645, 0.012]}>
-          <mesh castShadow scale={[0.93, 1.1, 0.98]}><sphereGeometry args={[0.112, 36, 28]} /><meshStandardMaterial color={SKIN} roughness={0.55} /></mesh>
-          {!look.long && [-1, 1].map(s => <mesh key={s} position={[s * 0.104, -0.005, 0]} scale={[0.5, 1, 0.7]}><sphereGeometry args={[0.02, 12, 10]} /><meshStandardMaterial color={SKIN} roughness={0.6} /></mesh>)}
-
-          {/* Khuôn mặt */}
-          <group ref={eyeL} position={[-0.041, 0.012, 0.1]}><mesh scale={[0.9, 1.15, 0.5]}><sphereGeometry args={[0.0138, 14, 12]} /><meshStandardMaterial color="#20191A" roughness={0.25} /></mesh></group>
-          <group ref={eyeR} position={[0.041, 0.012, 0.1]}><mesh scale={[0.9, 1.15, 0.5]}><sphereGeometry args={[0.0138, 14, 12]} /><meshStandardMaterial color="#20191A" roughness={0.25} /></mesh></group>
-          <mesh ref={browL} position={[-0.041, 0.05, 0.102]}><capsuleGeometry args={[0.0032, 0.026, 3, 8]} /><meshStandardMaterial color={look.hair} /></mesh>
-          <mesh ref={browR} position={[0.041, 0.05, 0.102]}><capsuleGeometry args={[0.0032, 0.026, 3, 8]} /><meshStandardMaterial color={look.hair} /></mesh>
-          <mesh position={[0, -0.016, 0.109]} scale={[0.8, 1.1, 0.9]}><sphereGeometry args={[0.0095, 12, 10]} /><meshStandardMaterial color="#DDAE8E" roughness={0.6} /></mesh>
-          <mesh ref={mouth} position={[0, -0.058, 0.098]}><torusGeometry args={[0.02, 0.0036, 8, 22, Math.PI]} /><meshStandardMaterial color="#A85F56" roughness={0.5} side={THREE.DoubleSide} /></mesh>
-
-          {/* Tóc */}
-          <mesh castShadow position={[0, 0.016, -0.012]} rotation={[-0.42, 0, 0]}>
-            <sphereGeometry args={[0.1215, 36, 24, 0, Math.PI * 2, 0, Math.PI * 0.5]} />
-            <meshStandardMaterial color={look.hair} roughness={0.92} side={THREE.DoubleSide} />
-          </mesh>
-          {look.long ? <>
-            <mesh castShadow position={[0, -0.11, -0.055]} scale={[1.18, 1, 0.56]}><capsuleGeometry args={[0.1, 0.17, 8, 18]} /><meshStandardMaterial color={look.hair} roughness={0.92} /></mesh>
-            {[-1, 1].map(s => <mesh key={s} castShadow position={[s * 0.1, -0.075, 0.018]} rotation={[0.04, 0, s * 0.05]} scale={[0.55, 1, 0.72]}><capsuleGeometry args={[0.03, 0.15, 6, 12]} /><meshStandardMaterial color={look.hair} roughness={0.92} /></mesh>)}
-            <mesh position={[-0.052, 0.076, 0.07]} rotation={[0.4, 0.42, 0.72]} scale={[1, 0.3, 0.46]}><sphereGeometry args={[0.078, 20, 14]} /><meshStandardMaterial color={look.hair} roughness={0.92} /></mesh>
-            <mesh position={[0.052, 0.078, 0.07]} rotation={[0.4, -0.42, -0.62]} scale={[1, 0.3, 0.46]}><sphereGeometry args={[0.07, 20, 14]} /><meshStandardMaterial color={look.hair} roughness={0.92} /></mesh>
-          </> : <>
-            <mesh position={[0, 0.095, 0.055]} rotation={[0.55, 0, 0]} scale={[1.16, 0.34, 0.75]}><sphereGeometry args={[0.09, 20, 14]} /><meshStandardMaterial color={look.hair} roughness={0.92} /></mesh>
-          </>}
-        </group>
-      </group>
-    </group>
-  );
+// Rèm có nếp gấp thật thay cho các ống trụ
+const Curtain = ({ position, width }: { position: [number, number, number]; width: number }) => {
+  const geo = useMemo(() => {
+    const g = new THREE.PlaneGeometry(width, 2.6, 120, 24);
+    const p = g.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), y = p.getY(i);
+      const flare = 1 + (1.3 - y) * .12;
+      p.setZ(i, (Math.sin(x * 34) * .032 + Math.sin(x * 13 + 1) * .018) * flare);
+    }
+    g.computeVertexNormals();
+    return g;
+  }, [width]);
+  return <mesh geometry={geo} position={position} castShadow receiveShadow><meshStandardMaterial color="#D9D3C6" roughness={.92} side={THREE.DoubleSide} /></mesh>;
 };
 
-const Armchair = ({ position, rotation, color }: { position: [number, number, number]; rotation?: [number, number, number]; color: string }) => (
-  <group position={position} rotation={rotation}>
-    <RBox size={[0.78, 0.2, 0.7]} radius={0.06} color={color} position={[0, 0.41, 0]} />
-    <RBox size={[0.78, 0.8, 0.17]} radius={0.07} color={color} position={[0, 0.78, -0.31]} rotation={[-0.1, 0, 0]} />
-    {[-1, 1].map(s => <RBox key={s} size={[0.13, 0.3, 0.68]} radius={0.05} color={color} position={[s * 0.45, 0.58, 0]} />)}
-    {[[-.33, .26], [.33, .26], [-.33, -.3], [.33, -.3]].map(([x, z], i) => (
-      <mesh key={i} position={[x, 0.15, z]} castShadow><cylinderGeometry args={[0.022, 0.016, 0.3, 10]} /><meshStandardMaterial color="#5B4636" roughness={0.5} /></mesh>
-    ))}
-  </group>
-);
+// Bóng tiếp xúc giả dưới đồ vật để đồ vật bám sàn, rẻ hơn nhiều so với AO thời gian thực
+const Contact = ({ position, size, opacity = .38 }: { position: [number, number, number]; size: [number, number]; opacity?: number }) => {
+  const tex = useMemo(() => canvasTex(128, 128, g => {
+    const r = g.createRadialGradient(64, 64, 8, 64, 64, 64);
+    r.addColorStop(0, 'rgba(30,22,16,1)'); r.addColorStop(.55, 'rgba(30,22,16,.5)'); r.addColorStop(1, 'rgba(30,22,16,0)');
+    g.fillStyle = r; g.fillRect(0, 0, 128, 128);
+  }), []);
+  return <mesh rotation={[-Math.PI / 2, 0, 0]} position={position}><planeGeometry args={size} /><meshBasicMaterial map={tex} transparent opacity={opacity} depthWrite={false} /></mesh>;
+};
+
+interface Placed { id: string; position: [number, number, number]; rotation?: number; scale?: number }
+const FURNITURE: Placed[] = [
+  // Hạ ghế xuống dưới sàn một chút để mặt đệm khớp với tư thế ngồi của nhân vật, phần chân ghế khuất dưới sàn
+  { id: 'modern_arm_chair_01', position: [0, -.11, -1.02], rotation: 0, scale: .94 },
+  { id: 'side_table_01', position: [.74, 0, -.86], rotation: -.28 },
+  { id: 'wooden_bookshelf_worn', position: [2.05, 0, -2.2], scale: 1.05 },
+  { id: 'ceramic_vase_01', position: [2.32, .94, -2.2], scale: .7 },
+  { id: 'planter_pot_clay', position: [-1.46, 0, -1.72], scale: 1.5 },
+  { id: 'fern_02', position: [-1.46, .28, -1.72], scale: 1.7 },
+];
+
+const Furniture = ({ onReady }: { onReady: () => void }) => {
+  const [root, setRoot] = useState<THREE.Group | null>(null);
+  useEffect(() => {
+    let alive = true;
+    loadRoom().then(g => {
+      if (!alive) return;
+      const group = new THREE.Group();
+      FURNITURE.forEach(f => {
+        const part = g.scene.children.filter(c => c.name === f.id);
+        const holder = new THREE.Group();
+        part.forEach(p => holder.add(p.clone()));
+        holder.position.set(...f.position);
+        holder.rotation.y = f.rotation ?? 0;
+        holder.scale.setScalar(f.scale ?? 1);
+        holder.traverse(o => { const m = o as THREE.Mesh; if (m.isMesh) { m.castShadow = true; m.receiveShadow = true; } });
+        group.add(holder);
+      });
+      setRoot(group);
+      onReady();
+    });
+    return () => { alive = false; };
+  }, []);
+  return root ? <primitive object={root} /> : null;
+};
 
 const Room = () => {
-  const tx = useTextures();
+  const floorMap = useTex(floorDiff, [2.6, 2.6], true), floorN = useTex(floorNor, [2.6, 2.6]), floorR = useTex(floorRough, [2.6, 2.6]);
+  const wallMap = useTex(wallDiff, [3, 1.1], true), wallN = useTex(wallNor, [3, 1.1]);
+  const sky = useMemo(() => canvasTex(512, 640, g => {
+    const grd = g.createLinearGradient(0, 0, 0, 640);
+    grd.addColorStop(0, '#D6E8EF'); grd.addColorStop(.6, '#F6F0E2'); grd.addColorStop(1, '#E2E8CF');
+    g.fillStyle = grd; g.fillRect(0, 0, 512, 640);
+    g.filter = 'blur(16px)';
+    [[70, 480, 120, '#8FAE8B'], [210, 530, 150, '#7E9F7E'], [380, 490, 130, '#94B38F'], [470, 570, 120, '#7A9A7B']].forEach(([x, y, r, c]) => {
+      g.fillStyle = c as string; g.beginPath(); g.arc(x as number, y as number, r as number, 0, Math.PI * 2); g.fill();
+    });
+  }), []);
+  const rug = useMemo(() => canvasTex(512, 512, g => {
+    g.fillStyle = '#B9C0B6'; g.beginPath(); g.arc(256, 256, 256, 0, Math.PI * 2); g.fill();
+    for (let i = 0; i < 26000; i++) {
+      const a = Math.random() * Math.PI * 2, r = Math.sqrt(Math.random()) * 254;
+      g.fillStyle = `rgba(${Math.random() > .5 ? '255,255,250' : '60,70,66'},.05)`;
+      g.fillRect(256 + Math.cos(a) * r, 256 + Math.sin(a) * r, 2, 2);
+    }
+    ['#A4AEA4', '#CCD1C8', '#98A398'].forEach((c, i) => { g.strokeStyle = c; g.lineWidth = 12; g.beginPath(); g.arc(256, 256, 232 - i * 70, 0, Math.PI * 2); g.stroke(); });
+  }), []);
+  const art = useMemo(() => canvasTex(256, 320, g => {
+    g.fillStyle = '#EDE7DA'; g.fillRect(0, 0, 256, 320);
+    g.fillStyle = '#7F9EA3'; g.beginPath(); g.ellipse(128, 215, 150, 66, 0, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#C9A26A'; g.beginPath(); g.arc(160, 120, 44, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#4F7377'; g.beginPath(); g.ellipse(70, 262, 130, 44, 0, 0, Math.PI * 2); g.fill();
+  }), []);
+  const wall = <meshStandardMaterial map={wallMap} normalMap={wallN} normalScale={new THREE.Vector2(.35, .35)} color="#E9EEE9" roughness={.92} />;
+
   const books = useMemo(() => {
-    const colors = ['#6F8FA3', '#C9A26A', '#8C9C86', '#B98A6A', '#3F5C63', '#D8CDB8', '#7D6A58'];
+    const colors = ['#5F7E8C', '#B8935A', '#7C8C76', '#A67A5C', '#3F5C63', '#CFC4AD', '#6E5C4C', '#8E9AA0'];
     const out: { x: number; y: number; w: number; h: number; c: string }[] = [];
-    [0.62, 1.14, 1.66].forEach((y, row) => {
-      let x = -0.42;
-      let i = row * 3;
-      while (x < 0.36) {
-        const w = 0.035 + ((i * 7) % 5) * 0.008, h = 0.26 + ((i * 3) % 4) * 0.022;
-        if ((i + row) % 11 !== 5) out.push({ x, y: y + h / 2, w, h, c: colors[i % colors.length] });
-        x += w + 0.006; i++;
-        if ((i + row * 2) % 13 === 0) x += 0.14;
+    [.5, .9, 1.3].forEach((y, row) => {
+      let x = -.42, i = row * 3;
+      const end = row === 1 ? .1 : .4;
+      while (x < end) {
+        const w = .03 + ((i * 7) % 5) * .007, h = .22 + ((i * 3) % 4) * .02;
+        out.push({ x, y: y + h / 2, w, h, c: colors[i % colors.length] });
+        x += w + .004; i++;
       }
     });
     return out;
@@ -236,77 +165,175 @@ const Room = () => {
 
   return (
     <group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[8, 8]} /><meshStandardMaterial map={tx.wood} roughness={0.55} /></mesh>
-      <mesh position={[0, 1.45, -2.4]} receiveShadow><planeGeometry args={[8, 2.9]} /><meshStandardMaterial map={tx.wall} roughness={0.95} /></mesh>
-      <mesh position={[-3, 1.45, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow><planeGeometry args={[8, 2.9]} /><meshStandardMaterial map={tx.wall} roughness={0.95} /></mesh>
-      <mesh position={[3, 1.45, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow><planeGeometry args={[8, 2.9]} /><meshStandardMaterial map={tx.wall} roughness={0.95} /></mesh>
-      <mesh position={[0, 2.9, 0]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[8, 8]} /><meshStandardMaterial color="#F1F2EE" roughness={1} /></mesh>
-      <RBox size={[6, 0.1, 0.03]} radius={0.005} color="#F4F3EE" position={[0, 0.05, -2.385]} />
+      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow><planeGeometry args={[8, 8]} /><meshStandardMaterial map={floorMap} normalMap={floorN} roughnessMap={floorR} roughness={.9} color="#D8C9B6" /></mesh>
+      <mesh position={[0, 1.45, -2.4]} receiveShadow><planeGeometry args={[8, 2.9]} />{wall}</mesh>
+      <mesh position={[-3, 1.45, 0]} rotation={[0, Math.PI / 2, 0]} receiveShadow><planeGeometry args={[8, 2.9]} />{wall}</mesh>
+      <mesh position={[3, 1.45, 0]} rotation={[0, -Math.PI / 2, 0]} receiveShadow><planeGeometry args={[8, 2.9]} />{wall}</mesh>
+      <mesh position={[0, 2.9, 0]} rotation={[Math.PI / 2, 0, 0]}><planeGeometry args={[8, 8]} /><meshStandardMaterial color="#F3F4F0" roughness={1} /></mesh>
+      <RBox size={[6, .11, .02]} radius={.004} color="#F2F1EC" position={[0, .055, -2.388]} />
 
       {/* Cửa sổ */}
       <group position={[-1.5, 1.52, -2.38]}>
-        <mesh><planeGeometry args={[1.5, 1.72]} /><meshBasicMaterial map={tx.sky} toneMapped={false} /></mesh>
-        {[[0, 0.88, 1.6, 0.05], [0, -0.88, 1.6, 0.05], [-0.77, 0, 0.05, 1.76], [0.77, 0, 0.05, 1.76], [0, 0, 0.03, 1.72], [0, 0.26, 1.5, 0.03]].map(([x, y, w, h], i) => (
-          <RBox key={i} size={[w, h, 0.05]} radius={0.008} color="#F4F3EE" position={[x, y, 0.02]} />
+        <mesh><planeGeometry args={[1.5, 1.72]} /><meshBasicMaterial map={sky} toneMapped={false} /></mesh>
+        {[[0, .88, 1.6, .05], [0, -.88, 1.6, .05], [-.77, 0, .05, 1.76], [.77, 0, .05, 1.76], [0, 0, .03, 1.72], [0, .26, 1.5, .03]].map(([x, y, w, h], i) => (
+          <RBox key={i} size={[w, h, .05]} radius={.006} color="#F4F3EE" position={[x, y, .02]} />
         ))}
-        <RBox size={[1.74, 0.05, 0.16]} radius={0.015} color="#F4F3EE" position={[0, -0.92, 0.06]} />
+        <RBox size={[1.74, .05, .16]} radius={.012} color="#F4F3EE" position={[0, -.92, .06]} />
       </group>
-      {[-2.46, -0.56].map((x, i) => (
-        <group key={i} position={[x, 1.42, -2.3]}>
-          {[-.11, -.04, .04, .11].map((o, k) => <mesh key={k} castShadow position={[o, 0, Math.sin(k * 2) * 0.03]}><cylinderGeometry args={[0.052, 0.062, 2.5, 12]} /><meshStandardMaterial color="#D9D4C7" roughness={0.9} /></mesh>)}
-        </group>
-      ))}
+      <Curtain position={[-2.42, 1.42, -2.3]} width={.62} />
+      <Curtain position={[-.58, 1.42, -2.3]} width={.62} />
+      <RBox size={[2.5, .035, .035]} radius={.015} color="#6B5B4A" position={[-1.5, 2.74, -2.28]} />
 
-      {/* Giá sách */}
-      <group position={[1.95, 0, -2.2]}>
-        <mesh position={[0, 1.07, -0.16]}><planeGeometry args={[1.0, 2.14]} /><meshStandardMaterial color="#8A7A69" roughness={0.9} /></mesh>
-        {[-1, 1].map(s => <RBox key={s} size={[0.03, 2.14, 0.34]} radius={0.004} color="#CDBFAC" position={[s * 0.5, 1.07, 0]} />)}
-        {[0.05, 0.6, 1.12, 1.64, 2.12].map(y => <RBox key={y} size={[1.02, 0.03, 0.34]} radius={0.004} color="#D6CCBB" position={[0, y, 0]} />)}
-        {books.map((b, i) => <mesh key={i} position={[b.x, b.y - 0.0, 0.0]} castShadow receiveShadow><boxGeometry args={[b.w, b.h, 0.21]} /><meshStandardMaterial color={b.c} roughness={0.7} /></mesh>)}
+      {/* Sách trên giá */}
+      <group position={[2.05, 0, -2.2]}>
+        {books.map((b, i) => <mesh key={i} position={[b.x, b.y, -.02]} castShadow receiveShadow><boxGeometry args={[b.w, b.h, .2]} /><meshStandardMaterial color={b.c} roughness={.75} /></mesh>)}
       </group>
 
-      {/* Tranh treo tường, thảm, đèn, cây, bàn nhỏ */}
-      <group position={[0.42, 1.78, -2.37]}>
-        <RBox size={[0.6, 0.74, 0.03]} radius={0.006} color="#5E5146" />
-        <mesh position={[0, 0, 0.017]}><planeGeometry args={[0.52, 0.66]} /><meshStandardMaterial map={tx.art} roughness={0.8} /></mesh>
-      </group>
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.006, -0.1]} receiveShadow><circleGeometry args={[1.5, 64]} /><meshStandardMaterial map={tx.rug} roughness={0.95} /></mesh>
-
-      <group position={[1.08, 0, -1.28]}>
-        <mesh castShadow position={[0, 0.02, 0]}><cylinderGeometry args={[0.16, 0.18, 0.04, 24]} /><meshStandardMaterial color="#4A4037" roughness={0.4} metalness={0.3} /></mesh>
-        <mesh castShadow position={[0, 0.76, 0]}><cylinderGeometry args={[0.011, 0.011, 1.5, 10]} /><meshStandardMaterial color="#4A4037" roughness={0.4} metalness={0.3} /></mesh>
-        <mesh position={[0, 1.56, 0]}><cylinderGeometry args={[0.15, 0.22, 0.26, 28, 1, true]} /><meshStandardMaterial color="#F7E9CC" emissive="#F5C877" emissiveIntensity={0.85} side={THREE.DoubleSide} roughness={0.9} /></mesh>
-        <pointLight position={[0, 1.5, 0.05]} intensity={2.6} distance={3.4} decay={1.6} color="#FFD49A" />
+      <group position={[.42, 1.78, -2.37]}>
+        <RBox size={[.6, .74, .03]} radius={.004} color="#5E5146" />
+        <mesh position={[0, 0, .017]}><planeGeometry args={[.52, .66]} /><meshStandardMaterial map={art} roughness={.8} /></mesh>
       </group>
 
-      <group position={[-1.32, 0, -1.72]}>
-        <mesh castShadow position={[0, 0.2, 0]}><cylinderGeometry args={[0.2, 0.15, 0.4, 24]} /><meshStandardMaterial color="#D3C6B2" roughness={0.7} /></mesh>
-        {Array.from({ length: 15 }).map((_, i) => {
-          const a = i * 2.399, tilt = 0.14 + (i % 5) * 0.13, len = 0.42 + (i % 4) * 0.13;
-          return (
-            <group key={i} position={[0, 0.38, 0]} rotation={[0, a, tilt]}>
-              <mesh castShadow position={[0, len / 2, 0]}><cylinderGeometry args={[0.004, 0.007, len, 6]} /><meshStandardMaterial color="#4E6B50" roughness={0.7} /></mesh>
-              <mesh castShadow position={[0, len + 0.1, 0]} rotation={[0, 0, tilt * 0.8]} scale={[0.46, 1.25, 0.09]}>
-                <sphereGeometry args={[0.1, 14, 12]} />
-                <meshStandardMaterial color={i % 3 ? '#54795D' : '#44684F'} roughness={0.55} />
-              </mesh>
-            </group>
-          );
-        })}
+      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, .006, -.2]} receiveShadow><circleGeometry args={[1.55, 64]} /><meshStandardMaterial map={rug} roughness={.98} /></mesh>
+
+      {/* Đèn đứng */}
+      <group position={[1.32, 0, -1.5]}>
+        <mesh castShadow position={[0, .02, 0]}><cylinderGeometry args={[.15, .17, .03, 28]} /><meshStandardMaterial color="#3F362E" roughness={.35} metalness={.6} /></mesh>
+        <mesh castShadow position={[0, .78, 0]}><cylinderGeometry args={[.009, .009, 1.54, 10]} /><meshStandardMaterial color="#3F362E" roughness={.35} metalness={.6} /></mesh>
+        <mesh position={[0, 1.6, 0]}><cylinderGeometry args={[.14, .21, .26, 32, 1, true]} /><meshStandardMaterial color="#F6E8CB" emissive="#F7C97B" emissiveIntensity={.9} side={THREE.DoubleSide} roughness={.9} /></mesh>
+        <pointLight position={[0, 1.55, .05]} intensity={2.1} distance={3.6} decay={1.7} color="#FFD49A" />
       </group>
 
-      <group position={[0.02, 0, 0.42]}>
-        <mesh castShadow receiveShadow position={[0, 0.44, 0]}><cylinderGeometry args={[0.33, 0.33, 0.028, 40]} /><meshStandardMaterial color="#B08A63" roughness={0.45} /></mesh>
-        <mesh castShadow position={[0, 0.22, 0]}><cylinderGeometry args={[0.024, 0.04, 0.42, 14]} /><meshStandardMaterial color="#6B5441" roughness={0.5} /></mesh>
-        <mesh position={[0, 0.012, 0]}><cylinderGeometry args={[0.19, 0.21, 0.02, 24]} /><meshStandardMaterial color="#6B5441" roughness={0.5} /></mesh>
-        <mesh castShadow position={[-0.13, 0.5, 0.04]}><cylinderGeometry args={[0.038, 0.031, 0.1, 18]} /><meshPhysicalMaterial color="#DDEEF0" roughness={0.1} transparent opacity={0.5} /></mesh>
-        <RBox size={[0.21, 0.09, 0.12]} radius={0.012} color="#EFE9DD" position={[0.13, 0.5, -0.04]} rotation={[0, 0.25, 0]} />
-        <RBox size={[0.17, 0.016, 0.23]} radius={0.004} color="#5F7E85" position={[0.02, 0.463, 0.16]} rotation={[0, -0.12, 0]} />
+      {/* Khăn giấy và ly nước trên bàn nhỏ */}
+      <group position={[.74, .52, -.86]} rotation={[0, -.28, 0]}>
+        <mesh castShadow position={[-.12, .055, .04]}><cylinderGeometry args={[.036, .03, .11, 24]} /><meshPhysicalMaterial color="#E6F0F2" roughness={.08} transparent opacity={.42} /></mesh>
+        <RBox size={[.22, .08, .12]} radius={.01} color="#EFE9DD" position={[.1, .04, -.03]} rotation={[0, .3, 0]} />
       </group>
 
-      <Armchair position={[0, 0, -1.02]} color="#A6B39D" />
+      <Contact position={[0, .012, -1.02]} size={[1.25, 1.2]} />
+      <Contact position={[.74, .012, -.86]} size={[.85, .85]} opacity={.3} />
+      <Contact position={[-1.46, .012, -1.72]} size={[.7, .7]} opacity={.34} />
+      <Contact position={[2.05, .012, -2.15]} size={[1.5, .7]} opacity={.34} />
+      <Contact position={[1.32, .012, -1.5]} size={[.5, .5]} opacity={.3} />
     </group>
   );
+};
+
+const X_AXIS = new THREE.Vector3(1, 0, 0), Y_AXIS = new THREE.Vector3(0, 1, 0);
+const qParent = new THREE.Quaternion(), qWorld = new THREE.Quaternion(), qLocal = new THREE.Quaternion();
+
+// Xoay một xương theo trục của phòng, chồng lên động tác đang chạy
+const rotateWorld = (bone: THREE.Object3D, axis: THREE.Vector3, angle: number) => {
+  bone.parent!.getWorldQuaternion(qParent);
+  qWorld.setFromAxisAngle(axis, angle);
+  qLocal.copy(qParent).invert().multiply(qWorld).multiply(qParent);
+  bone.quaternion.premultiply(qLocal);
+};
+
+// Động tác gốc ngồi ghế cao nên đùi dốc xuống. Nâng đùi cho ghế bành thấp và bù lại ở cẳng chân.
+const seatLegs = (legs: THREE.Object3D[][]) => legs.forEach(([thigh, calf]) => {
+  rotateWorld(thigh, X_AXIS, -THIGH_LIFT);
+  rotateWorld(calf, X_AXIS, THIGH_LIFT);
+});
+
+const Avatar = ({ variant, emotion, activity, onReady, onFail }: { variant: Variant; emotion: Emotion; activity: Activity; onReady: () => void; onFail: () => void }) => {
+  const [cast, setCast] = useState<Awaited<ReturnType<typeof loadCast>> | null>(null);
+  const [offset, setOffset] = useState<[number, number, number]>([0, 0, -1]);
+  const mixer = useRef<THREE.AnimationMixer | null>(null);
+  const actions = useRef<Record<string, THREE.AnimationAction>>({});
+  const current = useRef<string>('');
+  const meshes = useRef<THREE.Mesh[]>([]);
+  const head = useRef<THREE.Object3D | null>(null);
+  const legs = useRef<THREE.Object3D[][]>([]);
+  const face = useRef<Record<string, number>>({});
+  const blink = useRef({ next: 2, t: 0 });
+  const gaze = useRef<[number, number]>([0, 0]);
+  const emotionRef = useRef(emotion);
+  emotionRef.current = emotion;
+
+  useEffect(() => {
+    let alive = true;
+    loadCast(variant).then(c => {
+      if (!alive) return;
+      const m = new THREE.AnimationMixer(c.scene);
+      mixer.current = m;
+      actions.current = Object.fromEntries(c.clips.map(clip => [clip.name, m.clipAction(clip)]));
+      const found: THREE.Mesh[] = [];
+      c.scene.traverse(o => {
+        const mesh = o as THREE.Mesh;
+        if (mesh.isMesh) {
+          // Bóng VSM tự đổ lên mô hình có da gây vệt tối ở mặt, nên nhân vật chỉ đổ bóng ra môi trường
+          mesh.castShadow = true; mesh.receiveShadow = false; mesh.frustumCulled = false;
+          if (mesh.morphTargetDictionary) found.push(mesh);
+        }
+        if (/Bip01_Head$/.test(o.name)) head.current = o;
+      });
+      meshes.current = found;
+
+      // Đo vị trí hông trong tư thế ngồi để đặt nhân vật đúng vào ghế
+      const pose = actions.current.breathe;
+      pose?.play();
+      m.update(0);
+      c.scene.updateMatrixWorld(true);
+      legs.current = ['L', 'R'].map(side => [c.scene.getObjectByName(`Bip01_${side}_Thigh`)!, c.scene.getObjectByName(`Bip01_${side}_Calf`)!]);
+      seatLegs(legs.current);
+      c.scene.updateMatrixWorld(true);
+      const pelvis = c.scene.getObjectByName('Bip01_Pelvis'), foot = c.scene.getObjectByName('Bip01_L_Foot');
+      if (pelvis && foot) {
+        const v = pelvis.getWorldPosition(new THREE.Vector3()), f = foot.getWorldPosition(new THREE.Vector3());
+        const s = c.height / 1.74 * .01;
+        // Bàn chân chạm sàn quyết định độ cao của nhân vật
+        setOffset([-v.x * s, ANKLE - f.y * s, SEAT_HIP[2] - v.z * s]);
+      }
+      pose?.stop();
+      setCast(c);
+      onReady();
+    }).catch(onFail);
+    return () => { alive = false; mixer.current?.stopAllAction(); mixer.current = null; current.current = ''; };
+  }, [variant]);
+
+  const clipName = activity === 'thinking' ? 'thoughtful' : BODY[emotion];
+  useEffect(() => {
+    const next = actions.current[clipName];
+    if (!next || current.current === clipName) return;
+    const prev = actions.current[current.current];
+    next.reset().setLoop(THREE.LoopPingPong, Infinity).fadeIn(.9).play();
+    prev?.fadeOut(.9);
+    current.current = clipName;
+  }, [clipName, cast]);
+
+  const setMorph = (key: string, v: number) => meshes.current.forEach(m => {
+    Object.entries(m.morphTargetDictionary!).forEach(([n, i]) => { if (n.includes(key)) m.morphTargetInfluences![i] = v; });
+  });
+
+  useFrame((state, dt) => {
+    if (!mixer.current) return;
+    mixer.current.update(Math.min(dt, .1));
+    seatLegs(legs.current);
+    const k = 1 - Math.exp(-dt * 3.5), tgt = FACE[emotionRef.current];
+    ['BrowInnerUp', 'BrowDown', 'MouthPress', 'MouthFrown', 'MouthSmile'].forEach(n => {
+      face.current[n] = (face.current[n] ?? 0) + ((tgt[n] ?? 0) - (face.current[n] ?? 0)) * k;
+      setMorph(n, face.current[n]);
+    });
+    const b = blink.current;
+    b.next -= dt;
+    if (b.next < 0) { b.t = .16; b.next = 2.2 + Math.random() * 3.6; }
+    b.t = Math.max(0, b.t - dt);
+    setMorph('EyeBlink', b.t > 0 ? Math.sin((b.t / .16) * Math.PI) : 0);
+
+    // Đầu hơi hướng về người tham vấn, chồng lên động tác có sẵn
+    const [gx, gy] = GAZE[emotionRef.current];
+    gaze.current[0] += (gx - gaze.current[0]) * k; gaze.current[1] += (gy - gaze.current[1]) * k;
+    const t = state.clock.elapsedTime;
+    if (head.current) {
+      rotateWorld(head.current, X_AXIS, gaze.current[0] + Math.sin(t * .4) * .012);
+      rotateWorld(head.current, Y_AXIS, gaze.current[1] + Math.sin(t * .31) * .015);
+    }
+  });
+
+  if (!cast) return null;
+  const scale = cast.height / 1.74 * .01;
+  return <group position={offset} scale={scale}><primitive object={cast.scene} /></group>;
 };
 
 const CameraRig = ({ yawRef, pitchRef }: { yawRef: React.RefObject<number>; pitchRef: React.RefObject<number> }) => {
@@ -318,11 +345,11 @@ const CameraRig = ({ yawRef, pitchRef }: { yawRef: React.RefObject<number>; pitc
     cur.current.p += (pitchRef.current - cur.current.p) * k;
     const cam = camera as THREE.PerspectiveCamera;
     const aspect = size.width / size.height;
-    cam.fov = aspect < 1 ? 52 : aspect < 1.4 ? 36 : 30;
+    cam.fov = aspect < 1 ? 62 : aspect < 1.4 ? 46 : 38;
     cam.updateProjectionMatrix();
-    cam.position.set(0, 1.2, 2.25);
-    const dist = 5.5;
-    cam.lookAt(Math.sin(cur.current.y) * dist, 0.97 + cur.current.p * dist, 2.25 - Math.cos(cur.current.y) * dist);
+    cam.position.set(0, 1.18, CAM_Z);
+    const dist = 4.4;
+    cam.lookAt(Math.sin(cur.current.y) * dist, 1.0 + cur.current.p * dist, CAM_Z - Math.cos(cur.current.y) * dist);
   });
   return null;
 };
@@ -331,16 +358,16 @@ const Environment = () => {
   const { gl, scene } = useThree();
   useEffect(() => {
     const pmrem = new THREE.PMREMGenerator(gl);
-    const env = pmrem.fromScene(new RoomEnvironment(), 0.04).texture;
+    const env = pmrem.fromScene(new RoomEnvironment(), .04).texture;
     scene.environment = env;
-    scene.environmentIntensity = 0.42;
+    scene.environmentIntensity = .5;
     return () => { env.dispose(); pmrem.dispose(); };
   }, [gl, scene]);
   return null;
 };
 
 export interface SceneProps {
-  variant: 'a' | 'b' | 'c'; emotion: Emotion; activity: Activity; light?: boolean; onLost?: () => void; onFps?: (fps: number) => void;
+  variant: Variant; emotion: Emotion; activity: Activity; poster?: string; onLost?: () => void; onFps?: (fps: number) => void;
 }
 
 const FpsProbe = ({ onFps }: { onFps?: (fps: number) => void }) => {
@@ -352,54 +379,58 @@ const FpsProbe = ({ onFps }: { onFps?: (fps: number) => void }) => {
   return null;
 };
 
-export default function Scene({ variant, emotion, activity, onLost, onFps }: SceneProps) {
+export default function Scene({ variant, emotion, activity, poster, onLost, onFps }: SceneProps) {
   const yaw = useRef(0), pitch = useRef(0);
   const drag = useRef<{ x: number; y: number; yaw: number; pitch: number } | null>(null);
+  const [loaded, setLoaded] = useState({ room: false, cast: false });
   const clamp = (v: number, m: number) => Math.max(-m, Math.min(m, v));
   const small = typeof window !== 'undefined' && window.innerWidth < 700;
+  const ready = loaded.room && loaded.cast;
 
   return (
     <div
-      className="scene-wrap" style={{ width: '100%', height: '100%' }} tabIndex={0} role="application"
+      className="scene-wrap" style={{ width: '100%', height: '100%' }} tabIndex={0} role="application" data-ready={ready || undefined}
       aria-label="Phòng tham vấn 3D. Dùng phím mũi tên hoặc kéo chuột để xoay góc nhìn."
       onPointerDown={e => { drag.current = { x: e.clientX, y: e.clientY, yaw: yaw.current, pitch: pitch.current }; }}
       onPointerMove={e => {
         if (!drag.current) return;
-        yaw.current = clamp(drag.current.yaw + (e.clientX - drag.current.x) * 0.0022, 0.42);
-        pitch.current = clamp(drag.current.pitch - (e.clientY - drag.current.y) * 0.0016, 0.14);
+        yaw.current = clamp(drag.current.yaw + (e.clientX - drag.current.x) * .0022, .42);
+        pitch.current = clamp(drag.current.pitch - (e.clientY - drag.current.y) * .0016, .14);
       }}
       onPointerUp={() => { drag.current = null; }} onPointerLeave={() => { drag.current = null; }}
       onKeyDown={e => {
         const m: Record<string, () => void> = {
-          ArrowLeft: () => { yaw.current = clamp(yaw.current - 0.06, 0.42); }, ArrowRight: () => { yaw.current = clamp(yaw.current + 0.06, 0.42); },
-          ArrowUp: () => { pitch.current = clamp(pitch.current + 0.03, 0.14); }, ArrowDown: () => { pitch.current = clamp(pitch.current - 0.03, 0.14); },
+          ArrowLeft: () => { yaw.current = clamp(yaw.current - .06, .42); }, ArrowRight: () => { yaw.current = clamp(yaw.current + .06, .42); },
+          ArrowUp: () => { pitch.current = clamp(pitch.current + .03, .14); }, ArrowDown: () => { pitch.current = clamp(pitch.current - .03, .14); },
         };
         if (m[e.key]) { e.preventDefault(); m[e.key](); }
       }}
     >
       <Canvas
-        shadows={small ? false : { type: THREE.PCFShadowMap }} dpr={small ? [1, 1.5] : [1, 1.75]} camera={{ position: [0, 1.2, 2.25], fov: 36, near: 0.1, far: 30 }}
+        shadows={small ? false : { type: THREE.VSMShadowMap }} dpr={small ? [1, 1.5] : [1, 1.75]} camera={{ position: [0, 1.2, 2.25], fov: 36, near: .1, far: 30 }}
         gl={{ antialias: true, powerPreference: 'high-performance' }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.ACESFilmicToneMapping;
-          gl.toneMappingExposure = 1.02;
+          gl.toneMappingExposure = 1.0;
           gl.domElement.addEventListener('webglcontextlost', e => { e.preventDefault(); onLost?.(); });
         }}
       >
         <color attach="background" args={['#C6D4D0']} />
         <Environment />
-        <ambientLight intensity={0.16} color="#FFF3E2" />
-        <hemisphereLight intensity={0.4} color="#FFF6E8" groundColor="#A08C72" />
+        <ambientLight intensity={.14} color="#FFF3E2" />
+        <hemisphereLight intensity={.32} color="#FFF6E8" groundColor="#A08C72" />
         <directionalLight
-          position={[-2.4, 2.8, 1.8]} intensity={2.3} color="#FFE6C4" castShadow
-          shadow-mapSize-width={1536} shadow-mapSize-height={1536} shadow-camera-left={-3.4} shadow-camera-right={3.4}
-          shadow-camera-top={3.4} shadow-camera-bottom={-3.4} shadow-bias={-0.0004} shadow-radius={5}
+          position={[-2.2, 2.7, 2.4]} intensity={2.1} color="#FFE8CC" castShadow
+          shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-left={-3.2} shadow-camera-right={3.2}
+          shadow-camera-top={3.2} shadow-camera-bottom={-3.2} shadow-bias={-.0004} shadow-normalBias={.015} shadow-radius={7} shadow-blurSamples={12}
         />
         <Room />
-        <Character variant={variant} emotion={emotion} activity={activity} />
+        <Furniture onReady={() => setLoaded(l => ({ ...l, room: true }))} />
+        <Avatar variant={variant} emotion={emotion} activity={activity} onReady={() => setLoaded(l => ({ ...l, cast: true }))} onFail={() => onLost?.()} />
         <CameraRig yawRef={yaw} pitchRef={pitch} />
         <FpsProbe onFps={onFps} />
       </Canvas>
+      {!ready && <div className="scene-loading" style={poster ? { backgroundImage: `url(${poster})` } : undefined}><span className="glass">Đang chuẩn bị phòng tham vấn</span></div>}
     </div>
   );
 }

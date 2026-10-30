@@ -158,7 +158,7 @@ export const Room = () => {
       <div className="room">
         <section className="stage" aria-label="Phòng tham vấn">
           {view === '3D'
-            ? <SceneBoundary onError={onLost}><Scene variant={c.avatar} emotion={emotion} activity={activity} onLost={onLost} onFps={onFps} /></SceneBoundary>
+            ? <SceneBoundary onError={onLost}><Scene variant={c.avatar} emotion={emotion} activity={activity} poster={roomImage(c.avatar, emotion)} onLost={onLost} onFps={onFps} /></SceneBoundary>
             : <div className="stage-2d" role="img" aria-label={`Thân chủ ${c.clientName} trong phòng tham vấn`} style={{ backgroundImage: `url(${roomImage(c.avatar, emotion)})` }} />}
           <div className="stage-top">
             <div className="row" style={{ gap: 6 }}>
