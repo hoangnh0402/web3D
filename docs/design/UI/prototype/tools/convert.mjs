@@ -6,10 +6,18 @@ import path from 'node:path';
 
 const [,, RAW, OUT] = process.argv;
 mkdirSync(OUT, { recursive: true });
-const KEEP = ['AK_09_EyeBlinkLeft', 'AK_10_EyeBlinkRight', 'AK_01_BrowDownLeft', 'AK_02_BrowDownRight', 'AK_03_BrowInnerUp', 'AK_44_MouthSmileLeft', 'AK_45_MouthSmileRight', 'AK_30_MouthFrownLeft', 'AK_31_MouthFrownRight', 'AK_36_MouthPressLeft', 'AK_37_MouthPressRight'];
+// Biểu cảm theo ARKit và khẩu hình theo viseme. Bỏ phần còn lại để giảm dung lượng.
+const KEEP = [
+  'AK_01_BrowDownLeft', 'AK_02_BrowDownRight', 'AK_03_BrowInnerUp', 'AK_04_BrowOuterUpLeft', 'AK_05_BrowOuterUpRight',
+  'AK_07_CheekSquintLeft', 'AK_08_CheekSquintRight', 'AK_09_EyeBlinkLeft', 'AK_10_EyeBlinkRight',
+  'AK_19_EyeSquintLeft', 'AK_20_EyeSquintRight', 'AK_21_EyeWideLeft', 'AK_22_EyeWideRight', 'AK_25_JawOpen',
+  'AK_28_MouthDimpleLeft', 'AK_29_MouthDimpleRight', 'AK_30_MouthFrownLeft', 'AK_31_MouthFrownRight',
+  'AK_36_MouthPressLeft', 'AK_37_MouthPressRight', 'AK_44_MouthSmileLeft', 'AK_45_MouthSmileRight',
+  'VI_01_PP', 'VI_02_FF', 'VI_04_DD', 'VI_07_SS', 'VI_08_nn', 'VI_10_aa', 'VI_11_E', 'VI_12_I', 'VI_13_O', 'VI_14_U',
+];
 const tool = path.resolve('dist-tools/index.html');
 
-const browser = await chromium.launch({ channel: 'chrome', headless: true });
+const browser = await chromium.launch({ channel: process.env.BROWSER ?? 'chrome', headless: true });
 const page = await browser.newPage();
 page.on('pageerror', e => console.log('pageerror', e.message.slice(0, 300)));
 await page.goto(pathToFileURL(tool).href);

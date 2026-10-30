@@ -24,14 +24,13 @@ const write = async (doc, name) => {
   console.log(name, 'raw KB', Math.round(bytes.length / 1024), 'gz KB', Math.round(gz.length / 1024));
 };
 
-const META = { f12: { roughSkin: .52 }, f08: { roughSkin: .52 }, m10: { roughSkin: .55 } };
-for (const key of Object.keys(META)) {
+for (const key of ['f05', 'f08', 'm10']) {
   const doc = await io.read(`${GLB}/${key}.glb`);
   for (const mat of doc.getRoot().listMaterials()) {
     const n = mat.getName();
     mat.setMetallicFactor(0).setDoubleSided(false);
     if (n.endsWith('_head')) {
-      mat.setName('head').setRoughnessFactor(META[key].roughSkin).setBaseColorTexture(attach(doc, `${key}_head`, `${key}_head`)).setNormalTexture(attach(doc, `${key}_head_n`, `${key}_head_n`));
+      mat.setName('head').setRoughnessFactor(1).setBaseColorTexture(attach(doc, `${key}_head`, `${key}_head`)).setNormalTexture(attach(doc, `${key}_head_n`, `${key}_head_n`)).setMetallicRoughnessTexture(attach(doc, `${key}_head_r`, `${key}_head_r`));
     } else if (n.endsWith('_body')) {
       mat.setName('body').setRoughnessFactor(.78).setBaseColorTexture(attach(doc, `${key}_body`, `${key}_body`)).setNormalTexture(attach(doc, `${key}_body_n`, `${key}_body_n`));
     } else {

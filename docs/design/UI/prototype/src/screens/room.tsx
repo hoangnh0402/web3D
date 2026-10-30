@@ -53,7 +53,7 @@ export const Room = () => {
   const [recSec, setRecSec] = useState(0);
   const [view, setView] = useState<'3D' | '2D'>(() => webglSupported() ? '3D' : '2D');
   const [lowFps, setLowFps] = useState(false);
-  const [gfxNote, setGfxNote] = useState(webglSupported() ? '' : 'Thiết bị này chưa hỗ trợ phòng 3D, bạn đang dùng chế độ nhẹ.');
+  const [gfxNote, setGfxNote] = useState(() => webglSupported() ? '' : 'Thiết bị này chưa hỗ trợ phòng 3D, bạn đang dùng chế độ nhẹ.');
   const [micDenied, setMicDenied] = useState(false);
   const [safety, setSafety] = useState(false);
   const [confirmEnd, setConfirmEnd] = useState(false);
@@ -78,16 +78,17 @@ export const Room = () => {
     return () => clearInterval(t);
   }, [phase]);
 
+  // Chữ hiện theo nhịp nói khoảng 30 ký tự mỗi giây, khẩu hình và biểu cảm chạy cùng lúc với lời thoại
   const speak = useCallback((text: string, emo: Emotion, after?: () => void) => {
     setCaption('');
+    setEmotion(emo);
     let i = 0;
     const tick = () => {
       i += 2;
       setCaption(text.slice(0, i));
-      if (i < text.length) later(tick, 26);
+      if (i < text.length) later(tick, 66);
       else {
         setCaption(text);
-        setEmotion(emo);
         setMessages(m => [...m, { seq: m.length + 1, speaker: 'CLIENT', text, time: now() }]);
         setPhase('ready');
         after?.();
@@ -193,7 +194,7 @@ export const Room = () => {
               <div className="card">
                 <h2>Làm quen với phòng tham vấn</h2>
                 <ol className="small">
-                  <li>Thân chủ ngồi đối diện bạn. Kéo chuột, vuốt hoặc dùng phím mũi tên để xoay góc nhìn.</li>
+                  <li>Thân chủ ngồi chếch đối diện bạn. Kéo chuột, vuốt hoặc dùng phím mũi tên để xoay góc nhìn.</li>
                   <li>Nhấn micro để nói hoặc nhập văn bản ở khung hội thoại.</li>
                   <li>Thân chủ trả lời bằng chữ trên màn hình.</li>
                   <li>Khi xong, bấm Kết thúc phiên để xem báo cáo.</li>

@@ -11,12 +11,14 @@ RAW = sys.argv[1]
 ROCKET = 'https://raw.githubusercontent.com/microsoft/Microsoft-Rocketbox/master/Assets'
 HEADERS = {'User-Agent': 'lab-fourt-prototype'}
 
-AVATARS = {'f12': ('Female_Adult_12', 'f012'), 'f08': ('Female_Adult_08', 'f008'), 'm10': ('Male_Adult_10', 'm024')}
+AVATARS = {'f05': ('Female_Adult_05', 'f005'), 'f08': ('Female_Adult_08', 'f008'), 'm10': ('Male_Adult_10', 'm024')}
 # Tên động tác trong app: tên tệp gốc. Nam không có "finger nail" nên dùng "nervous" cho trạng thái lo lắng.
 CLIPS = {'breathe': 'breathe_01', 'neutral': 'idle_neutral_01', 'thoughtful': 'gestic_thoughtful', 'shrug': 'gestic_shrug_01', 'relaxed': 'idle_relaxed_01', 'waiting': 'idle_waiting_01'}
 ANXIOUS = {'f': 'idle_finger nail', 'm': 'idle_nervous_01'}
-MODELS = ['modern_arm_chair_01', 'side_table_01', 'wooden_bookshelf_worn', 'ceramic_vase_01', 'fern_02', 'planter_pot_clay']
-SURFACES = ['laminate_floor_02', 'painted_plaster_wall']
+MODELS = ['Sofa_01', 'coffee_table_round_01', 'side_table_01', 'wooden_bookshelf_worn', 'ceramic_vase_04', 'fern_02', 'planter_pot_clay', 'throw_pillows_01', 'hanging_picture_frame_02']
+SURFACES = ['herringbone_parquet', 'painted_plaster_wall', 'rough_linen']
+# Ảnh toàn cảnh dùng làm cảnh ngoài cửa sổ
+BACKDROP = 'charolettenbrunn_park'
 
 
 def get(url, dest):
@@ -47,6 +49,8 @@ for s in SURFACES:
     info = json.load(u.urlopen(u.Request(f'https://api.polyhaven.com/files/{s}', headers=HEADERS), timeout=30))
     for key, out in [('Diffuse', 'diff'), ('nor_gl', 'nor'), ('Rough', 'rough')]:
         jobs.append((info[key]['1k']['jpg']['url'], f'{RAW}/surfaces/{s}_{out}.jpg'))
+
+jobs.append((json.load(u.urlopen(u.Request(f'https://api.polyhaven.com/files/{BACKDROP}', headers=HEADERS), timeout=30))['tonemapped']['url'], f'{RAW}/backdrop.jpg'))
 
 with ThreadPoolExecutor(8) as pool:
     list(pool.map(lambda j: get(*j), jobs))

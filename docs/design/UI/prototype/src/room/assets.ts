@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { GLTF, GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import f08 from '../assets/3d/f08.glb.gz';
-import f12 from '../assets/3d/f12.glb.gz';
+import f05 from '../assets/3d/f05.glb.gz';
 import m10 from '../assets/3d/m10.glb.gz';
 import clipsF from '../assets/3d/clips-f.glb.gz';
 import clipsM from '../assets/3d/clips-m.glb.gz';
@@ -9,9 +9,9 @@ import room from '../assets/3d/room.glb.gz';
 
 export type Variant = 'a' | 'b' | 'c';
 
-const SOURCES = { f08, f12, m10, clipsF, clipsM, room };
+const SOURCES = { f05, f08, m10, clipsF, clipsM, room };
 const CAST: Record<Variant, { model: keyof typeof SOURCES; clips: keyof typeof SOURCES; height: number }> = {
-  a: { model: 'f12', clips: 'clipsF', height: 1.6 },
+  a: { model: 'f05', clips: 'clipsF', height: 1.6 },
   b: { model: 'm10', clips: 'clipsM', height: 1.7 },
   c: { model: 'f08', clips: 'clipsF', height: 1.6 },
 };

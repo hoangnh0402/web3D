@@ -4,6 +4,7 @@ import numpy as np
 from PIL import Image, ImageFilter
 
 RAW, OUT = sys.argv[1], sys.argv[2]
+WINDOW_YAW = float(sys.argv[3]) if len(sys.argv) > 3 else 118
 os.makedirs(OUT, exist_ok=True)
 
 
@@ -42,12 +43,33 @@ def brown_eyes(head):
 
 
 # Quy tắc đổi màu riêng cho từng nhân vật: phát hiện vùng áo theo sắc màu rồi đổi sang tông trầm
-def outfit_f12(rgb):
-    """Áo hoodie có họa tiết neon xanh và tím, đưa về tông xám trầm."""
+def not_skin(mask):
+    """Da tay nằm ở hai góc trên của texture thân nên được loại khỏi vùng đổi màu."""
+    h, w = mask.shape
+    mask[:int(h * .29), :int(w * .32)] = False
+    mask[:int(h * .29), int(w * .68):] = False
+    return mask
+
+
+def outfit_f05(rgb):
+    """Áo vest hồng kẻ ô đổi sang xanh xám dịu."""
     r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
-    green = (g > 1.25 * r) & (g > 1.2 * b) & (g > 60)
-    purple = (b > 1.2 * g) & (r > 1.2 * g) & (b > 60)
-    return recolor(rgb, soft(green | purple), (70, 74, 76))
+    pink = not_skin((r > 1.12 * g) & (r > 1.08 * b) & (r > 90))
+    return recolor(rgb, soft(pink), (112, 122, 118))
+
+
+def outfit_f08(rgb):
+    """Áo thun xám đổi sang màu be ấm, làm mờ họa tiết in trước ngực."""
+    h, w, _ = rgb.shape
+    r, g, b = rgb[..., 0], rgb[..., 1], rgb[..., 2]
+    grey = not_skin((abs(r - g) < 22) & (abs(g - b) < 22) & (r > 60))
+    # Quần jean bạc màu nằm ở hai bên nửa dưới texture, tránh để bị đổi màu theo áo
+    grey[int(h * .52):, :int(w * .31)] = False
+    grey[int(h * .52):, int(w * .69):] = False
+    mask = soft(grey)
+    calm = np.asarray(Image.fromarray(rgb.astype('uint8')).filter(ImageFilter.GaussianBlur(22)), float)
+    flat = rgb * (1 - mask[..., None] * .8) + calm * mask[..., None] * .8
+    return recolor(flat, mask, (168, 142, 118))
 
 
 def outfit_m10(rgb):
@@ -64,9 +86,20 @@ def darken_hair(arr, keep_alpha=False):
     return np.concatenate([out, arr[..., 3:]], axis=2) if keep_alpha else out
 
 
-OUTFIT = {'f12': outfit_f12, 'f08': lambda rgb: rgb, 'm10': outfit_m10}
-EYES = {'f12': True, 'f08': True, 'm10': False}
-DARK_HAIR = {'f12': True, 'f08': True, 'm10': False}
+def head_rough(head):
+    """Độ nhám theo vùng: nhãn cầu bóng để có điểm sáng trong mắt, tóc bóng hơn da."""
+    h, w, _ = head.shape
+    lum = head @ np.array([.299, .587, .114])
+    rough = np.full((h, w), .54)
+    rough[(lum < 70) & (np.arange(h) < h * .6)[:, None]] = .58
+    rough[int(h * .84):, int(w * .19):int(w * .36)] = .1
+    g = (rough * 255).astype('uint8')
+    return np.stack([g, g, np.zeros_like(g)], axis=2)
+
+
+OUTFIT = {'f05': outfit_f05, 'f08': outfit_f08, 'm10': outfit_m10}
+EYES = {'f05': True, 'f08': True, 'm10': False}
+DARK_HAIR = {'f05': True, 'f08': True, 'm10': False}
 
 for key, fn in OUTFIT.items():
     d = f'{RAW}/avatars/{key}'
@@ -82,26 +115,47 @@ for key, fn in OUTFIT.items():
         head = brown_eyes(head)
     body = fn(np.asarray(Image.open(f'{d}/body_color.tga').convert('RGB'), float))
     Image.fromarray(head.astype('uint8')).resize((1024, 1024), Image.LANCZOS).save(f'{OUT}/{key}_head.webp', quality=82, method=6)
+    Image.fromarray(head_rough(head)).resize((256, 256), Image.BILINEAR).save(f'{OUT}/{key}_head_r.webp', quality=70, method=6)
     Image.fromarray(body.astype('uint8')).resize((1024, 1024), Image.LANCZOS).save(f'{OUT}/{key}_body.webp', quality=78, method=6)
     opacity = np.asarray(Image.open(f'{d}/opacity_color.tga').convert('RGBA'), float)
     if DARK_HAIR[key]:
         opacity = darken_hair(opacity, keep_alpha=True)
+    # Pixel gần như trong suốt vẫn mang màu sáng và lộ thành sợi trắng trên tóc, nên đưa về đúng màu tóc
+    solid = opacity[..., 3] > 235
+    opacity[~solid, :3] = np.median(opacity[solid][:, :3], axis=0)
     Image.fromarray(opacity.astype('uint8')).resize((1024, 1024), Image.LANCZOS).save(f'{OUT}/{key}_opacity.webp', quality=78, alpha_quality=85, method=6)
     Image.open(f'{d}/head_normal.tga').convert('RGB').resize((768, 768), Image.LANCZOS).save(f'{OUT}/{key}_head_n.webp', quality=70, method=6)
     Image.open(f'{d}/body_normal.tga').convert('RGB').resize((768, 768), Image.LANCZOS).save(f'{OUT}/{key}_body_n.webp', quality=66, method=6)
+
+def window_view(path, yaw, pitch=4, fov=62, size=(1024, 1280)):
+    """Cắt ảnh toàn cảnh thành phối cảnh thường để đặt sau cửa sổ."""
+    pano = np.asarray(Image.open(path).convert('RGB').resize((4096, 2048), Image.LANCZOS))
+    w, h = size
+    f = .5 * w / np.tan(np.radians(fov) / 2)
+    yy, xx = np.mgrid[:h, :w]
+    x, y = (xx - w / 2) / f, (h / 2 - yy) / f
+    p, t = np.radians(pitch), np.radians(yaw)
+    y2, z2 = y * np.cos(p) + np.sin(p), np.cos(p) - y * np.sin(p)
+    lon, lat = np.arctan2(x, z2) + t, np.arctan2(y2, np.hypot(x, z2))
+    u = ((lon / (2 * np.pi) + .5) % 1 * 4095).astype(int)
+    v = ((.5 - lat / np.pi) * 2047).astype(int).clip(0, 2047)
+    return Image.fromarray(pano[v, u])
+
 
 # Texture nội thất: lưu cùng tên tệp gốc để bước sau gắn lại vào glTF
 for f in glob.glob(f'{RAW}/models/*/textures/*.jpg'):
     name = os.path.basename(f).rsplit('.', 1)[0]
     img = Image.open(f).convert('RGB')
-    if name == 'modern_arm_chair_01_pillow_diff_1k':
-        # Da đen của ghế tạo cảm giác nặng nề, đổi sang vải da màu xám ấm
+    size = 1024 if name.startswith('Sofa_01_diff') else 512
+    if name == 'throw_pillows_01_diff_1k':
+        # Họa tiết zigzag đỏ quá gắt cho phòng tham vấn, giữ nếp vải và đưa về một tông đất dịu
         rgb = np.asarray(img, float)
-        lum = rgb @ np.array([.299, .587, .114])
-        mask = soft(lum < 62)
-        lifted = np.clip((lum / 26)[..., None] * np.array([92., 84., 74.]), 0, 255)
-        img = Image.fromarray((rgb * (1 - mask[..., None]) + lifted * mask[..., None]).astype('uint8'))
-    img.resize((512, 512), Image.LANCZOS).save(f'{OUT}/{name}.webp', quality=68, method=6)
+        img = Image.fromarray(recolor(rgb, np.ones(rgb.shape[:2]), (176, 132, 96)).astype('uint8'))
+    if name == 'hanging_picture_frame_02_artwork_diff_1k':
+        img = window_view(f'{RAW}/backdrop.jpg', 118, 16, 70, (1024, 683)).filter(ImageFilter.GaussianBlur(7))
+    img.resize((size, size), Image.LANCZOS).save(f'{OUT}/{name}.webp', quality=68, method=6)
+
+window_view(f'{RAW}/backdrop.jpg', WINDOW_YAW).filter(ImageFilter.GaussianBlur(2.4)).save(f'{OUT}/window_view.webp', quality=74, method=6)
 
 for f in glob.glob(f'{RAW}/surfaces/*.jpg'):
     name = os.path.basename(f).rsplit('.', 1)[0]
