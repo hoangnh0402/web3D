@@ -4,9 +4,12 @@ import * as THREE from 'three';
 import type { Emotion } from '../data';
 import { loadCast, Variant } from './assets';
 import { Activity, Rig } from './rig';
-import { SEAT, SEAT_HIP } from './RoomSet';
+import { SEAT, SEAT_HIP } from './layout';
 
 // Nhân vật: Microsoft Rocketbox (MIT). Xem tools/ để dựng lại.
+
+// Tường ấm trong phòng hắt lên làm da ngả cam, nên bù một chút màu lạnh
+const SKIN_TINT = new THREE.Color(.95, .97, 1.08);
 
 // Da người hơi mờ: lớp sheen ấm giả tán xạ dưới da, giảm phản xạ trắng để da không giống nhựa
 const dressSkin = (mesh: THREE.Mesh) => {
@@ -15,16 +18,15 @@ const dressSkin = (mesh: THREE.Mesh) => {
     const s = m as THREE.MeshStandardMaterial;
     if ((m as THREE.MeshPhysicalMaterial).isMeshPhysicalMaterial) return m;
     if (s.name === 'hair') {
-      // Alpha-to-coverage cho mép tóc mềm hơn nhiều so với cắt alpha cứng
-      s.alphaTest = .32;
-      s.alphaToCoverage = true;
+      // Tóc cắt alpha cứng. Alpha-to-coverage để lộ ảnh nền sáng qua khe các mảng tóc thành những vệt trắng.
+      s.alphaTest = .18;
       s.roughness = .85;
       s.envMapIntensity = .45;
       return s;
     }
-    if (s.name !== 'head') { s.roughness = Math.max(s.roughness, .82); s.envMapIntensity = .8; return s; }
+    if (s.name !== 'head') { s.roughness = Math.max(s.roughness, .82); s.envMapIntensity = .8; s.color.copy(SKIN_TINT); return s; }
     return new THREE.MeshPhysicalMaterial({
-      name: 'head', map: s.map, normalMap: s.normalMap, normalScale: new THREE.Vector2(.7, .7), roughnessMap: s.roughnessMap, roughness: 1, metalness: 0,
+      name: 'head', color: SKIN_TINT, map: s.map, normalMap: s.normalMap, normalScale: new THREE.Vector2(.7, .7), roughnessMap: s.roughnessMap, roughness: 1, metalness: 0,
       sheen: .3, sheenColor: new THREE.Color('#FFC4B0'), sheenColorMap: s.map, sheenRoughness: .62, specularIntensity: .5, envMapIntensity: 1,
     });
   });
@@ -45,8 +47,7 @@ export const Avatar = ({ variant, emotion, activity, onReady, onFail }: { varian
       c.scene.traverse(o => {
         const mesh = o as THREE.Mesh;
         if (!mesh.isMesh) return;
-        // Bóng VSM tự đổ lên mô hình có da gây vệt tối ở mặt, nên nhân vật chỉ đổ bóng ra môi trường
-        mesh.castShadow = true; mesh.receiveShadow = false; mesh.frustumCulled = false;
+        mesh.frustumCulled = false;
         dressSkin(mesh);
       });
       rig = new Rig(c.scene, c.clips, c.height, SEAT_HIP);

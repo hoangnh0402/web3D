@@ -1,10 +1,9 @@
-"""Thu nhỏ texture, đổi màu trang phục và màu mắt. Dùng: python tools/prepare-textures.py <raw> <tex_out>"""
+"""Thu nhỏ texture nhân vật, đổi màu trang phục và màu mắt. Dùng: python tools/prepare-textures.py <raw> <tex_out>"""
 import glob, os, sys
 import numpy as np
-from PIL import Image, ImageFilter
+from PIL import Image, ImageEnhance, ImageFilter
 
 RAW, OUT = sys.argv[1], sys.argv[2]
-WINDOW_YAW = float(sys.argv[3]) if len(sys.argv) > 3 else 118
 os.makedirs(OUT, exist_ok=True)
 
 
@@ -142,25 +141,8 @@ def window_view(path, yaw, pitch=4, fov=62, size=(1024, 1280)):
     return Image.fromarray(pano[v, u])
 
 
-# Texture nội thất: lưu cùng tên tệp gốc để bước sau gắn lại vào glTF
-for f in glob.glob(f'{RAW}/models/*/textures/*.jpg'):
-    name = os.path.basename(f).rsplit('.', 1)[0]
-    img = Image.open(f).convert('RGB')
-    size = 1024 if name.startswith('Sofa_01_diff') else 512
-    if name == 'throw_pillows_01_diff_1k':
-        # Họa tiết zigzag đỏ quá gắt cho phòng tham vấn, giữ nếp vải và đưa về một tông đất dịu
-        rgb = np.asarray(img, float)
-        img = Image.fromarray(recolor(rgb, np.ones(rgb.shape[:2]), (176, 132, 96)).astype('uint8'))
-    if name == 'hanging_picture_frame_02_artwork_diff_1k':
-        img = window_view(f'{RAW}/backdrop.jpg', 118, 16, 70, (1024, 683)).filter(ImageFilter.GaussianBlur(7))
-    img.resize((size, size), Image.LANCZOS).save(f'{OUT}/{name}.webp', quality=68, method=6)
-
-window_view(f'{RAW}/backdrop.jpg', WINDOW_YAW).filter(ImageFilter.GaussianBlur(2.4)).save(f'{OUT}/window_view.webp', quality=74, method=6)
-
-for f in glob.glob(f'{RAW}/surfaces/*.jpg'):
-    name = os.path.basename(f).rsplit('.', 1)[0]
-    size = 1024 if name.endswith('diff') else 768
-    Image.open(f).convert('RGB').resize((size, size), Image.LANCZOS).save(f'{OUT}/{name}.webp', quality=72, method=6)
+# Tranh treo tường trong phòng: ảnh cây xanh làm mờ như tranh sơn dầu, thay cho ảnh gốc của model
+ImageEnhance.Brightness(window_view(f'{RAW}/backdrop.jpg', 118, -6, 64, (1024, 683)).filter(ImageFilter.GaussianBlur(6))).enhance(1.25).resize((512, 512), Image.LANCZOS).save(f'{OUT}/hanging_picture_frame_02_artwork_diff_1k.webp', quality=80, method=6)
 
 total = sum(os.path.getsize(p) for p in glob.glob(f'{OUT}/*.webp'))
 print('webp files', len(glob.glob(f'{OUT}/*.webp')), 'MB', round(total / 1e6, 2))

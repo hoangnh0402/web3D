@@ -202,7 +202,7 @@ table.t .act { text-align: right; white-space: nowrap; }
 .room { position: fixed; inset: 0; display: grid; grid-template-columns: minmax(0, 1fr) 400px; grid-template-rows: minmax(0, 1fr); background: var(--night); }
 .stage { position: relative; min-width: 0; min-height: 0; overflow: hidden; background: #C9C3B6; }
 .stage .scene-wrap { position: absolute; inset: 0; cursor: grab; touch-action: none; }
-.stage .scene-wrap::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 78% 82% at 50% 44%, transparent 55%, rgba(38, 28, 18, .26) 100%); }
+.stage .scene-wrap::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: radial-gradient(ellipse 80% 84% at 50% 44%, transparent 60%, rgba(38, 28, 18, .2) 100%); }
 .stage .scene-wrap:active { cursor: grabbing; }
 .scene-loading { position: absolute; inset: 0; z-index: 1; background: center / cover no-repeat #C9C3B6; display: grid; place-items: center; }
 .stage-2d { position: absolute; inset: 0; background: center / cover no-repeat; }

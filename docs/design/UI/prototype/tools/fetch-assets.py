@@ -15,9 +15,9 @@ AVATARS = {'f05': ('Female_Adult_05', 'f005'), 'f08': ('Female_Adult_08', 'f008'
 # Tên động tác trong app: tên tệp gốc. Nam không có "finger nail" nên dùng "nervous" cho trạng thái lo lắng.
 CLIPS = {'breathe': 'breathe_01', 'neutral': 'idle_neutral_01', 'thoughtful': 'gestic_thoughtful', 'shrug': 'gestic_shrug_01', 'relaxed': 'idle_relaxed_01', 'waiting': 'idle_waiting_01'}
 ANXIOUS = {'f': 'idle_finger nail', 'm': 'idle_nervous_01'}
-MODELS = ['Sofa_01', 'coffee_table_round_01', 'side_table_01', 'wooden_bookshelf_worn', 'ceramic_vase_04', 'fern_02', 'planter_pot_clay', 'throw_pillows_01', 'hanging_picture_frame_02']
+MODELS = ['Sofa_01', 'coffee_table_round_01', 'side_table_01', 'wooden_bookshelf_worn', 'ceramic_vase_04', 'fern_02', 'planter_pot_clay', 'throw_pillows_01', 'hanging_picture_frame_02', 'book_encyclopedia_set_01']
 SURFACES = ['herringbone_parquet', 'painted_plaster_wall', 'rough_linen']
-# Ảnh toàn cảnh dùng làm cảnh ngoài cửa sổ
+# Ảnh toàn cảnh HDR: vừa là bầu trời chiếu sáng căn phòng, vừa là cảnh ngoài cửa sổ
 BACKDROP = 'charolettenbrunn_park'
 
 
@@ -50,7 +50,9 @@ for s in SURFACES:
     for key, out in [('Diffuse', 'diff'), ('nor_gl', 'nor'), ('Rough', 'rough')]:
         jobs.append((info[key]['1k']['jpg']['url'], f'{RAW}/surfaces/{s}_{out}.jpg'))
 
-jobs.append((json.load(u.urlopen(u.Request(f'https://api.polyhaven.com/files/{BACKDROP}', headers=HEADERS), timeout=30))['tonemapped']['url'], f'{RAW}/backdrop.jpg'))
+sky = json.load(u.urlopen(u.Request(f'https://api.polyhaven.com/files/{BACKDROP}', headers=HEADERS), timeout=30))
+jobs.append((sky['tonemapped']['url'], f'{RAW}/backdrop.jpg'))
+jobs.append((sky['hdri']['4k']['hdr']['url'], f'{RAW}/sky.hdr'))
 
 with ThreadPoolExecutor(8) as pool:
     list(pool.map(lambda j: get(*j), jobs))

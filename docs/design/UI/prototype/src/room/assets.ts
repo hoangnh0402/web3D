@@ -5,11 +5,10 @@ import f05 from '../assets/3d/f05.glb.gz';
 import m10 from '../assets/3d/m10.glb.gz';
 import clipsF from '../assets/3d/clips-f.glb.gz';
 import clipsM from '../assets/3d/clips-m.glb.gz';
-import room from '../assets/3d/room.glb.gz';
 
 export type Variant = 'a' | 'b' | 'c';
 
-const SOURCES = { f05, f08, m10, clipsF, clipsM, room };
+const SOURCES = { f05, f08, m10, clipsF, clipsM };
 const CAST: Record<Variant, { model: keyof typeof SOURCES; clips: keyof typeof SOURCES; height: number }> = {
   a: { model: 'f05', clips: 'clipsF', height: 1.6 },
   b: { model: 'm10', clips: 'clipsM', height: 1.7 },
@@ -38,7 +37,6 @@ const load = (key: keyof typeof SOURCES) => {
   return cache.get(key)!;
 };
 
-export const loadRoom = () => load('room');
 export const loadCast = async (v: Variant) => {
   const { model, clips, height } = CAST[v];
   const [m, c] = await Promise.all([load(model), load(clips)]);
