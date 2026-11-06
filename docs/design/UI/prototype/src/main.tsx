@@ -42,4 +42,7 @@ const App = () => {
   );
 };
 
+// Xuất khung hình tĩnh cho Figma hoặc người dùng giảm chuyển động: tắt hiệu ứng
+if ((window as unknown as { __noMotion?: boolean }).__noMotion) document.documentElement.classList.add('no-motion');
+
 createRoot(document.getElementById('root')!).render(<App />);

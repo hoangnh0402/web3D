@@ -5,7 +5,7 @@ import { Emotion, Msg, Session } from '../data';
 import Scene, { webglSupported, type Activity } from '../room/Scene';
 import { buildReport, nextClientLine, RISK_LINE } from '../sim';
 import { CURRENT_STUDENT, getState, go, logAudit, setState, toast, updateSession, useStore } from '../store';
-import { Btn, Modal, Notice } from '../ui';
+import { Btn, calmMotion, Modal, Notice } from '../ui';
 import { MsgLine } from './student';
 
 class SceneBoundary extends Component<{ onError: () => void; children: ReactNode }, { failed: boolean }> {
@@ -80,7 +80,8 @@ export const Room = () => {
 
   const speak = useCallback((text: string, emo: Emotion, after?: () => void) => {
     setCaption('');
-    let i = 0;
+    // Người dùng giảm chuyển động thì hiện cả câu ngay, không gõ từng chữ
+    let i = calmMotion() ? text.length : 0;
     const tick = () => {
       i += 2;
       setCaption(text.slice(0, i));
@@ -158,7 +159,7 @@ export const Room = () => {
       <div className="room">
         <section className="stage" aria-label="Phòng tham vấn">
           {view === '3D'
-            ? <SceneBoundary onError={onLost}><Scene variant={c.avatar} emotion={emotion} activity={activity} poster={roomImage(c.avatar, emotion)} onLost={onLost} onFps={onFps} /></SceneBoundary>
+            ? <SceneBoundary onError={onLost}><Scene variant={c.avatar} emotion={emotion} activity={activity} poster={roomImage(c.avatar, emotion)} play={!intro} onLost={onLost} onFps={onFps} /></SceneBoundary>
             : <div className="stage-2d" role="img" aria-label={`Thân chủ ${c.clientName} trong phòng tham vấn`} style={{ backgroundImage: `url(${roomImage(c.avatar, emotion)})` }} />}
           <div className="stage-top">
             <div className="row" style={{ gap: 6 }}>

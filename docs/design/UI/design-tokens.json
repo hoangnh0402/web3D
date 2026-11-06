@@ -1,152 +1,154 @@
 {
   "color": {
+    "navy-950": {
+      "$type": "color",
+      "$value": "#0D1748"
+    },
+    "navy-900": {
+      "$type": "color",
+      "$value": "#121F5B"
+    },
+    "navy": {
+      "$type": "color",
+      "$value": "#1A237E"
+    },
+    "navy-700": {
+      "$type": "color",
+      "$value": "#283A99"
+    },
+    "accent": {
+      "$type": "color",
+      "$value": "#3F78C6"
+    },
     "ink": {
       "$type": "color",
-      "$value": "#15323B"
+      "$value": "#14204F"
     },
     "ink-2": {
       "$type": "color",
-      "$value": "#47606A"
+      "$value": "#3A4A7C"
     },
     "ink-3": {
       "$type": "color",
-      "$value": "#6E858D"
+      "$value": "#61709F"
     },
-    "paper": {
+    "sky": {
       "$type": "color",
-      "$value": "#F1F5F4"
+      "$value": "#5BA8EC"
     },
-    "surface": {
+    "sky-2": {
       "$type": "color",
-      "$value": "#FFFFFF"
+      "$value": "#8EC3F2"
     },
-    "sunken": {
+    "sky-soft": {
       "$type": "color",
-      "$value": "#E7EEEC"
+      "$value": "rgba(91, 168, 236, .14)"
+    },
+    "card": {
+      "$type": "color",
+      "$value": "rgba(225, 235, 252, .93)"
+    },
+    "card-solid": {
+      "$type": "color",
+      "$value": "#E1EBFC"
+    },
+    "card-2": {
+      "$type": "color",
+      "$value": "#D0DEF6"
+    },
+    "card-3": {
+      "$type": "color",
+      "$value": "#F1F6FE"
     },
     "line": {
       "$type": "color",
-      "$value": "#D5E0DE"
+      "$value": "#BACCEB"
     },
     "line-strong": {
       "$type": "color",
-      "$value": "#B9C9C7"
+      "$value": "#9AB2DE"
     },
-    "brand": {
+    "track": {
       "$type": "color",
-      "$value": "#14606C"
+      "$value": "#A8C1EA"
     },
-    "brand-strong": {
+    "bg": {
       "$type": "color",
-      "$value": "#0D4752"
-    },
-    "brand-soft": {
-      "$type": "color",
-      "$value": "#DCEDEE"
-    },
-    "brand-ink": {
-      "$type": "color",
-      "$value": "#0F4C57"
-    },
-    "night": {
-      "$type": "color",
-      "$value": "#103640"
-    },
-    "night-2": {
-      "$type": "color",
-      "$value": "#1A4752"
-    },
-    "night-ink": {
-      "$type": "color",
-      "$value": "#E4EFEF"
-    },
-    "night-dim": {
-      "$type": "color",
-      "$value": "#A2BEC2"
-    },
-    "lamp": {
-      "$type": "color",
-      "$value": "#E8A33A"
-    },
-    "lamp-strong": {
-      "$type": "color",
-      "$value": "#A86A0B"
-    },
-    "lamp-soft": {
-      "$type": "color",
-      "$value": "#FBEFD9"
+      "$value": "#4F6C9E"
     },
     "ok": {
       "$type": "color",
-      "$value": "#24724F"
+      "$value": "#1E7552"
     },
     "ok-soft": {
       "$type": "color",
-      "$value": "#DDF0E6"
+      "$value": "#D3EFE1"
     },
     "warn": {
       "$type": "color",
-      "$value": "#96600A"
+      "$value": "#94600A"
     },
     "warn-soft": {
       "$type": "color",
-      "$value": "#F9ECD3"
+      "$value": "#FBEACB"
     },
     "danger": {
       "$type": "color",
-      "$value": "#A93A29"
+      "$value": "#B03636"
     },
     "danger-soft": {
       "$type": "color",
-      "$value": "#F8E2DD"
-    },
-    "muted-soft": {
-      "$type": "color",
-      "$value": "#E6ECEB"
-    },
-    "l1": {
-      "$type": "color",
-      "$value": "#BFD9D9"
-    },
-    "l2": {
-      "$type": "color",
-      "$value": "#7FB5B8"
-    },
-    "l3": {
-      "$type": "color",
-      "$value": "#3F8C95"
-    },
-    "l4": {
-      "$type": "color",
-      "$value": "#14606C"
+      "$value": "#F8DADA"
     },
     "l0": {
       "$type": "color",
-      "$value": "#DDE4E3"
+      "$value": "#CCD9F0"
+    },
+    "l1": {
+      "$type": "color",
+      "$value": "#B9CEF0"
+    },
+    "l2": {
+      "$type": "color",
+      "$value": "#86A8E0"
+    },
+    "l3": {
+      "$type": "color",
+      "$value": "#4870C2"
+    },
+    "l4": {
+      "$type": "color",
+      "$value": "#1A237E"
     }
   },
   "radius": {
     "r-s": {
       "$type": "dimension",
-      "$value": "8px"
+      "$value": "10px"
     },
     "r-m": {
       "$type": "dimension",
-      "$value": "12px"
+      "$value": "16px"
     },
     "r-l": {
       "$type": "dimension",
-      "$value": "18px"
+      "$value": "22px"
     }
   },
   "font": {
-    "display": {
-      "$type": "fontFamily",
-      "$value": "Bricolage Grotesque"
-    },
-    "body": {
+    "font": {
       "$type": "fontFamily",
       "$value": "Be Vietnam Pro"
+    }
+  },
+  "shadow": {
+    "shadow": {
+      "$type": "shadow",
+      "$value": "0 10px 28px rgba(9, 22, 78, .18), 0 2px 6px rgba(9, 22, 78, .1)"
+    },
+    "shadow-lg": {
+      "$type": "shadow",
+      "$value": "0 22px 50px rgba(8, 18, 70, .32), 0 4px 10px rgba(8, 18, 70, .16)"
     }
   }
 }

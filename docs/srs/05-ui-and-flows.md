@@ -154,7 +154,8 @@ Trình duyệt mất kết nối giữa chừng không làm dừng luồng phía
 
 ## 6. Hướng dẫn thiết kế
 
-- Màu ấm, trung tính. Tránh điểm thưởng, huy hiệu, hiệu ứng âm thanh và các yếu tố tạo cảm giác trò chơi.
+- Phong cách theo mẫu khách chọn: thanh bên navy, nền lá nhiệt đới đơn sắc xanh, thẻ kính xanh nhạt viền navy, nút bo tròn. Tránh điểm thưởng, huy hiệu, hiệu ứng âm thanh và các yếu tố tạo cảm giác trò chơi.
+- Chuyển động mượt nhưng tiết chế: chuyển trang, thẻ xuất hiện lần lượt, số liệu đếm tăng. Khi hệ điều hành bật chế độ giảm chuyển động, mọi hiệu ứng được tắt.
 - Phòng tham vấn nên giống phòng tham vấn thật: ánh sáng dịu, hai ghế, bàn nhỏ, ít chi tiết.
 - Mức đánh giá hiển thị bằng chữ và màu, không chỉ bằng màu.
 - Báo cáo ưu tiên phần giải thích và dẫn chứng, không đặt con số làm trọng tâm.

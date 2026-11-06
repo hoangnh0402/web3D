@@ -3,7 +3,7 @@ import { AlertTriangle, BookOpenCheck, Check, GraduationCap, Info, KeyRound, Mic
 import { roomImage } from '../assets';
 import { SKILLS } from '../data';
 import { go, Route, toast } from '../store';
-import { Badge, BrandMark, Btn, Field, Meter, Notice, PageHead } from '../ui';
+import { Badge, BrandMark, Btn, Field, Leaves, Meter, Notice, PageHead } from '../ui';
 
 export const Login = () => {
   const [user, setUser] = useState('minhanh.k72');
@@ -15,12 +15,13 @@ export const Login = () => {
   };
   return (
     <div className="login">
+      <Leaves />
       <section className="login-art" style={{ backgroundImage: `url(${roomImage('a')})` }}>
         <div><h1>Một căn phòng để luyện lắng nghe</h1><p>Thực hành tham vấn với thân chủ mô phỏng, xem lại từng lượt trao đổi và nhận phản hồi có dẫn chứng.</p></div>
       </section>
       <section className="login-form">
         <div>
-          <div className="brand"><BrandMark /><div><b>Lab FourT</b><small>Phòng thực hành tham vấn ảo</small></div></div>
+          <div className="brand"><BrandMark small /><div><b>LAB FOURT</b><small>Phòng thực hành tham vấn ảo</small></div></div>
           <form className="stack" onSubmit={e => { e.preventDefault(); submit(); }}>
             <Field id="login-user" label="Tên đăng nhập"><input id="login-user" className="input" value={user} autoComplete="username" onChange={e => setUser(e.target.value)} /></Field>
             <Field id="login-pass" label="Mật khẩu"><input id="login-pass" className="input" type="password" value={pass} autoComplete="current-password" onChange={e => setPass(e.target.value)} /></Field>
@@ -45,17 +46,18 @@ export const ChangePassword = () => {
   const mismatch = b.length > 0 && a !== b;
   return (
     <div className="login">
+      <Leaves />
       <section className="login-art" style={{ backgroundImage: `url(${roomImage('a')})` }}>
         <div><h1>Chào mừng bạn đến với Lab FourT</h1><p>Đây là lần đăng nhập đầu tiên, hãy đặt mật khẩu của riêng bạn.</p></div>
       </section>
       <section className="login-form">
-        <form className="stack" onSubmit={e => { e.preventDefault(); if (a.length >= 8 && a === b) { toast('Đã đổi mật khẩu'); go('home'); } }}>
+        <div><form className="stack" onSubmit={e => { e.preventDefault(); if (a.length >= 8 && a === b) { toast('Đã đổi mật khẩu'); go('home'); } }}>
           <h2>Đặt mật khẩu mới</h2>
           <Field id="pw-new" label="Mật khẩu mới" hint="Tối thiểu 8 ký tự."><input id="pw-new" className="input" type="password" value={a} onChange={e => setA(e.target.value)} /></Field>
           <Field id="pw-again" label="Nhập lại mật khẩu"><input id="pw-again" className="input" type="password" value={b} onChange={e => setB(e.target.value)} /></Field>
           {mismatch && <Notice tone="danger" icon={KeyRound}>Hai mật khẩu chưa khớp, hãy nhập lại.</Notice>}
           <button type="submit" className="btn primary lg">Lưu và tiếp tục</button>
-        </form>
+        </form></div>
       </section>
     </div>
   );
@@ -70,6 +72,7 @@ const GROUPS: { title: string; items: [string, string, Route][] }[] = [
 
 export const ScreenMap = () => (
   <div className="main-scroll">
+    <Leaves />
     <div className="page">
       <PageHead title="Bản đồ màn hình" sub="Mở nhanh từng màn hình trong bản demo. Mã SCR khớp với tài liệu SRS, mục 05." actions={<><Btn kind="secondary" onClick={() => go('styleguide')}>Hệ thống thiết kế</Btn><Btn kind="secondary" onClick={() => go('login')}>Về trang đăng nhập</Btn></>} />
       <Notice tone="neutral" icon={ShieldCheck}>Dữ liệu trong bản demo là dữ liệu minh họa. Thân chủ, sinh viên và lớp học đều là nhân vật hư cấu. AI và nhận dạng giọng nói được giả lập.</Notice>
@@ -90,14 +93,16 @@ export const ScreenMap = () => (
 );
 
 const COLORS: [string, [string, string][]][] = [
-  ['Mực và nền', [['ink', 'Chữ chính'], ['ink-2', 'Chữ phụ'], ['ink-3', 'Chú thích'], ['paper', 'Nền trang'], ['surface', 'Bề mặt'], ['sunken', 'Nền chìm'], ['line', 'Đường kẻ']]],
-  ['Thương hiệu', [['night', 'Điều hướng'], ['night-2', 'Điều hướng, đang chọn'], ['brand', 'Hành động chính'], ['brand-strong', 'Khi di chuột'], ['brand-soft', 'Nền nhạt'], ['lamp', 'Ánh đèn, điểm nhấn'], ['lamp-soft', 'Nền đèn nhạt']]],
+  ['Navy và xanh trời', [['navy-950', 'Thanh bên, viền thẻ'], ['navy-900', 'Tiêu đề'], ['navy', 'Hành động chính'], ['navy-700', 'Khi di chuột'], ['accent', 'Mục đang chọn'], ['sky', 'Biểu tượng thanh bên'], ['sky-2', 'Chữ thanh bên']]],
+  ['Thẻ và nền', [['card-solid', 'Thẻ'], ['card-2', 'Nền chìm'], ['card-3', 'Ô nhập'], ['line', 'Đường kẻ'], ['track', 'Rãnh tiến độ'], ['bg', 'Nền lá']]],
+  ['Chữ', [['ink', 'Chữ chính'], ['ink-2', 'Chữ phụ'], ['ink-3', 'Chú thích']]],
   ['Trạng thái', [['ok', 'Tốt'], ['ok-soft', 'Tốt, nền'], ['warn', 'Chú ý'], ['warn-soft', 'Chú ý, nền'], ['danger', 'Nguy hiểm'], ['danger-soft', 'Nguy hiểm, nền']]],
   ['Thang 4 mức', [['l1', 'Mức 1'], ['l2', 'Mức 2'], ['l3', 'Mức 3'], ['l4', 'Mức 4'], ['l0', 'Chưa đủ dữ liệu']]],
 ];
 
 export const StyleGuide = () => (
   <div className="main-scroll">
+    <Leaves />
     <div className="page">
       <PageHead title="Hệ thống thiết kế" sub="Màu, kiểu chữ và thành phần dùng chung của Lab FourT." actions={<Btn kind="secondary" onClick={() => go('map')}>Bản đồ màn hình</Btn>} />
       {COLORS.map(([group, list]) => (
@@ -108,8 +113,8 @@ export const StyleGuide = () => (
       ))}
       <section className="panel stack">
         <h2>Kiểu chữ</h2>
-        <h1>Tiêu đề trang, Bricolage Grotesque 31</h1>
-        <h2>Tiêu đề khối, Bricolage Grotesque 19</h2>
+        <h1>Tiêu đề trang, Be Vietnam Pro 34 đậm</h1>
+        <h2>Tiêu đề khối, Be Vietnam Pro 20 đậm</h2>
         <h3>Tiêu đề nhỏ, Be Vietnam Pro 15 đậm vừa</h3>
         <p>Nội dung, Be Vietnam Pro 15. Thân chủ có thể do dự hoặc chưa sẵn sàng chia sẻ ngay.</p>
         <p className="small muted">Chú thích, Be Vietnam Pro 13.</p>

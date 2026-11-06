@@ -1,4 +1,5 @@
 import { useSyncExternalStore } from 'react';
+import { flushSync } from 'react-dom';
 import { ASSIGNMENTS, AUDIT, AuditItem, Assignment, CASES, CASE_DEFAULTS, CaseItem, CLASSES, ClassRoom, Role, Session, SESSIONS, User, USERS } from './data';
 
 export type Route =
@@ -42,12 +43,23 @@ export const useStore = <T,>(sel: (s: State) => T): T => useSyncExternalStore(cb
 
 export const go = (route: Route, patch: Partial<State> = {}) => {
   const role = roleOf(route);
-  setState({ ...patch, route, ...(role ? { role } : {}) });
-  if (location.hash.replace('#', '') !== route) {
-    try { history.replaceState(null, '', '#' + route); } catch { location.hash = route; }
-  }
-  document.querySelector('.main-scroll')?.scrollTo(0, 0);
-  window.scrollTo(0, 0);
+  const apply = () => {
+    setState({ ...patch, route, ...(role ? { role } : {}) });
+    if (location.hash.replace('#', '') !== route) {
+      try { history.replaceState(null, '', '#' + route); } catch { location.hash = route; }
+    }
+    document.querySelector('.main-scroll')?.scrollTo({ top: 0 });
+    window.scrollTo(0, 0);
+  };
+  // Chuyển trang bằng View Transitions khi trình duyệt hỗ trợ: thanh bên đứng yên, nội dung trượt và mờ dần
+  type Transition = { ready: Promise<void>; finished: Promise<void>; updateCallbackDone: Promise<void> };
+  const doc = document as Document & { startViewTransition?: (cb: () => void) => Transition };
+  const calm = document.documentElement.classList.contains('no-motion') || window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
+  if (doc.startViewTransition && !calm && route !== state.route) {
+    // Bấm chuyển trang liên tiếp sẽ bỏ qua hiệu ứng trước, đó là hành vi bình thường nên không báo lỗi
+    const t = doc.startViewTransition(() => flushSync(apply));
+    [t.ready, t.finished, t.updateCallbackDone].forEach(p => p?.catch(() => {}));
+  } else apply();
 };
 
 window.addEventListener('hashchange', () => {

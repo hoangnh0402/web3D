@@ -44,7 +44,7 @@ Cột **Mặc định** là cách SRS đang xử lý cho đến khi có câu tr�
 | OI-07 | Có cần xóa vĩnh viễn khi người dùng yêu cầu không? Hiện dữ liệu tồn tại vô thời hạn, trong khi §9.2 yêu cầu có thời hạn lưu và quy trình xóa, và cần đối chiếu quy định bảo vệ dữ liệu cá nhân hiện hành. | Không có xóa vĩnh viễn trên giao diện | Đại diện dự án | Trước M5 |
 | OI-08 | Sinh viên có được xem và sửa văn bản nhận dạng trước khi gửi không? Sửa được thì giảm lỗi và đánh giá công bằng hơn, nhưng làm chậm nhịp hội thoại. | Có, sinh viên bấm Gửi để xác nhận | Giảng viên | M0 |
 | OI-09 | Có lưu bản ghi âm không? Tài liệu gốc có ghi "ghi lại cuộc trò chuyện" và một comment gửi bên kỹ thuật. | Chỉ lưu văn bản, không lưu âm thanh | Đại diện dự án | M0 |
-| OI-10 | Ai làm phòng và nhân vật 3D? Mỗi ca cần nhân vật riêng không? Điều khoản giấy phép của nguồn tài sản đã được kiểm tra chưa? | 1 phòng, nhân vật dùng chung, tự dựng | Đại diện dự án, Frontend/3D | Trước M1 |
+| OI-10 | Ai làm phòng và nhân vật 3D cho bản chính thức? Khách đã chọn hướng nhân vật minh họa thay cho tả thực, cần chốt người thực hiện và mức độ hoàn thiện. | 1 phòng dùng chung, nội thất Poly Haven CC0, mỗi ca một nhân vật minh họa tự dựng (tài liệu 06 mục 4.4) | Đại diện dự án, Frontend/3D | Trước M1 |
 | OI-11 | Giảng viên có được đọc transcript luyện tự do không? | Không, chỉ xem số liệu tổng hợp | Giảng viên | M0 |
 | OI-12 | Sinh viên có được xóa phiên đã nộp không? | Được, bài nộp chuyển sang rút bài, Quản trị viên khôi phục được | Giảng viên | M3 |
 | OI-13 | Cấu hình cụ thể của máy chủ local. | Theo ước tính tại tài liệu 06 mục 7.2 | Người phụ trách IT | Trước M1 |
@@ -65,5 +65,5 @@ Cột **Mặc định** là cách SRS đang xử lý cho đến khi có câu tr�
 | R-09 | Lộ dữ liệu, nhất là khi dữ liệu không bị xóa hẳn | Ảnh hưởng riêng tư và uy tín | Phân quyền, tối thiểu hóa dữ liệu, không lưu âm thanh, xử lý OI-07 |
 | R-10 | Chi phí AI tăng, nếu dùng dịch vụ tính phí | Khó duy trì | Theo dõi mức dùng, hạn mức, giới hạn độ dài phiên |
 | R-11 | Nhầm mô phỏng với tham vấn thật | Rủi ro đạo đức và an toàn | Cảnh báo ở nhiều màn hình, hoàn thành OI-03 trước khi có sinh viên thật |
-| R-12 | Chất lượng nhân vật 3D thấp làm hỏng cảm giác chuyên nghiệp | Giảm giá trị nhập vai | Thử nghiệm mẫu nhân vật sớm với giảng viên, ưu tiên tối giản |
+| R-12 | Nhân vật 3D trông kém hoặc gây cảm giác đáng sợ khi quá giống người thật | Giảm giá trị nhập vai, sinh viên khó chịu | Dùng phong cách minh họa thân thiện, thử mẫu nhân vật sớm với giảng viên và sinh viên |
 | R-13 | Quản trị viên không có nền tảng kỹ thuật | Lỗi vận hành | Trang quản trị đơn giản, tài liệu từng bước, người phụ trách IT hỗ trợ |
