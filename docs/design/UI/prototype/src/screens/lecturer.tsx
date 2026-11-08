@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Archive, BookCheck, CalendarPlus, Check, Copy, Eye, FilePlus2, Info, Send, Table2 } from 'lucide-react';
 import { CaseItem, LEVELS, Session, SKILLS } from '../data';
 import { CURRENT_LECTURER, go, logAudit, newCase, setState, toast, updateSession, useStore } from '../store';
-import { Badge, Btn, Field, Meter, Modal, Notice, PageHead } from '../ui';
+import { Badge, Btn, CountUp, Field, Meter, Modal, Notice, PageHead } from '../ui';
 import { MsgLine } from './student';
 
 const useScope = () => {
@@ -23,10 +23,10 @@ export const LecHome = () => {
     <div className="page">
       <PageHead title="Tổng quan" sub={mine.map(c => c.name).join(', ')} actions={<Btn icon={CalendarPlus} onClick={() => go('lec-assign')}>Giao bài mới</Btn>} />
       <div className="grid-4">
-        <div className="stat"><b>{students.length}</b><span>Sinh viên phụ trách</span></div>
-        <div className="stat"><b>{open.length}</b><span>Bài đang mở</span></div>
-        <div className="stat"><b>{toReview.length}</b><span>Bài chờ xem xét</span></div>
-        <div className="stat"><b>{sessions.filter(s => s.record === 'ACTIVE').length}</b><span>Phiên trong 14 ngày</span></div>
+        <div className="stat"><span className="big"><CountUp value={students.length} /></span><span>Sinh viên phụ trách</span></div>
+        <div className="stat"><span className="big"><CountUp value={open.length} /></span><span>Bài đang mở</span></div>
+        <div className="stat"><span className="big"><CountUp value={toReview.length} /></span><span>Bài chờ xem xét</span></div>
+        <div className="stat"><span className="big"><CountUp value={sessions.filter(s => s.record === 'ACTIVE').length} /></span><span>Phiên trong 14 ngày</span></div>
       </div>
       <div className="grid-2">
         <section className="panel flush">

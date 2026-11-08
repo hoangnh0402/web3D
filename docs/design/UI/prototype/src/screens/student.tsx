@@ -1,9 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { AlertTriangle, CalendarClock, Check, Clock, FileText, Info, Mic, PencilLine, PlayCircle, ShieldCheck, Trash2, UserRound } from 'lucide-react';
+import { AlertTriangle, Award, CalendarClock, Check, Clock, FileText, Info, MessagesSquare, Mic, PencilLine, Play, PlayCircle, ShieldCheck, Trash2 } from 'lucide-react';
 import { roomImage } from '../assets';
 import { CaseItem, Msg, Session, SKILLS } from '../data';
 import { CURRENT_STUDENT, getState, go, logAudit, toast, updateSession, useStore } from '../store';
-import { Badge, Btn, Meter, Modal, Notice, PageHead } from '../ui';
+import { Badge, Bar, Btn, CountUp, Gauge, Meter, Modal, Notice, PageHead } from '../ui';
 
 const firstName = (n: string) => n.split(' ').slice(-2).join(' ');
 const daysLeft = (d: string) => {
@@ -21,59 +21,69 @@ export const Home = () => {
   const me = users.find(u => u.id === CURRENT_STUDENT)!;
   const mine = useMine();
   const open = assignments.filter(a => a.status === 'OPEN');
-  const pending = open.filter(a => !mine.some(s => s.assignmentId === a.id && s.submission?.status === 'SUBMITTED'));
-  const next = pending[0] ?? open[0];
+  const submitted = (id: string) => mine.some(s => s.assignmentId === id && s.submission?.status === 'SUBMITTED');
+  const next = open.find(a => !submitted(a.id)) ?? open[0];
   const nextCase = cases.find(c => c.id === next.caseId)!;
-  const visible = mine.filter(s => s.record === 'ACTIVE' && s.status === 'ENDED');
-  const last = visible[0];
+  const done = assignments.filter(a => submitted(a.id)).length;
+  const ended = mine.filter(s => s.status === 'ENDED');
+  const minutes = ended.reduce((a, s) => a + s.minutes, 0);
+  const last = mine.find(s => s.record === 'ACTIVE' && s.status === 'ENDED' && s.report);
+  const strong = last?.report?.scores.filter(s => (s.level ?? 0) >= 3).length ?? 0;
+  const published = cases.filter(c => c.status === 'PUBLISHED');
   return (
     <div className="page">
-      <PageHead title={`Chào ${firstName(me.name)}`} sub="Bạn có thể thực hành bất cứ lúc nào. Mỗi phiên chỉ mình bạn và giảng viên được phân quyền xem." />
-      <section className="next-up">
-        <div className="copy">
-          <span className="kicker">Bài tiếp theo</span>
+      <PageHead title="Trang chủ" sub={`Chào ${firstName(me.name)}. Bạn có thể thực hành bất cứ lúc nào, chỉ bạn và giảng viên được phân quyền xem bài nộp.`} />
+      <section className="hero-card" aria-label="Trọng tâm hôm nay">
+        <div>
+          <span className="kicker">Trọng tâm hôm nay</span>
           <h2>{nextCase.title}</h2>
-          <p>{nextCase.summary}</p>
+          <p>Phiên {nextCase.minutes} phút với thân chủ {nextCase.clientName}</p>
           <div className="meta">
             <span><CalendarClock size={15} aria-hidden />Hạn {next.due}</span>
-            <span><Clock size={15} aria-hidden />Khoảng {nextCase.minutes} phút</span>
-            <span><UserRound size={15} aria-hidden />Thân chủ {nextCase.clientName}</span>
+            <span><Clock size={15} aria-hidden />{next.title}</span>
           </div>
-          <Btn icon={PlayCircle} size="lg" onClick={() => go('prepare', { caseId: nextCase.id })}>Chuẩn bị thực hành</Btn>
+          <div className="actions"><Btn icon={PlayCircle} size="lg" onClick={() => go('prepare', { caseId: nextCase.id })}>Bắt đầu thực hành</Btn></div>
         </div>
-        <div className="pic" role="img" aria-label="Phòng tham vấn với thân chủ ngồi đối diện" style={{ backgroundImage: `url(${roomImage(nextCase.avatar)})` }} />
+        <Gauge value={done / assignments.length} label={<><CountUp value={done} />/{assignments.length}</>} sub="Bài đã nộp" />
       </section>
-      <div className="grid-2">
-        <section className="panel stack">
-          <div className="panel-head"><h2>Bài được giao</h2><Btn kind="ghost" size="sm" onClick={() => go('library')}>Xem thư viện ca</Btn></div>
+      <div className="stats">
+        <div className="stat">
+          <h3>Phiên đã luyện</h3>
+          <div className="val"><MessagesSquare size={30} aria-hidden /><span><CountUp value={ended.length} /> <small>/ 10 phiên</small></span></div>
+          <Bar value={Math.min(1, ended.length / 10)} />
+        </div>
+        <div className="stat">
+          <h3>Thời gian luyện</h3>
+          <div className="val"><Clock size={30} aria-hidden /><span><CountUp value={minutes} /> <small>/ 180 phút</small></span></div>
+          <Bar value={Math.min(1, minutes / 180)} />
+        </div>
+        <div className="stat">
+          <h3>Kỹ năng đạt mức 3+</h3>
+          <div className="val"><Award size={30} aria-hidden /><span><CountUp value={strong} /> <small>/ 6 kỹ năng</small></span></div>
+          <Bar value={strong / 6} />
+        </div>
+      </div>
+      <div className="grid-2-eq">
+        <section className="panel lift stack">
+          <h2>Câu hỏi phản tư</h2>
+          <p style={{ fontSize: 16 }}>{last?.report?.questions[0] ?? 'Hoàn thành phiên đầu tiên để nhận câu hỏi phản tư.'}</p>
+          {last && <p className="small muted">Từ phiên {cases.find(c => c.id === last.caseId)!.title}, {last.endedAt.slice(0, 5)}</p>}
+          {last && <div><Btn kind="secondary" icon={PencilLine} onClick={() => go('reflection', { sessionId: last.id })}>Viết phản tư</Btn></div>}
+        </section>
+        <section className="panel lift stack">
+          <div className="panel-head"><h2>Ca thực hành</h2><Btn kind="ghost" size="sm" onClick={() => go('library')}>Xem tất cả</Btn></div>
           <div>
-            {assignments.map(a => {
-              const c = cases.find(x => x.id === a.caseId)!;
-              const sess = mine.find(s => s.assignmentId === a.id);
-              const done = sess?.submission?.status === 'SUBMITTED';
+            {published.map(c => {
+              const a = open.find(x => x.caseId === c.id);
               return (
-                <div className="list-row" key={a.id}>
-                  <div className="grow"><b style={{ fontWeight: 500 }}>{c.title}</b><div className="small muted">{a.title}, hạn {a.due}</div></div>
-                  {done ? <Badge tone="ok"><Check size={13} aria-hidden />Đã nộp</Badge> : sess ? <Badge tone="warn">Chưa nộp</Badge> : a.status === 'CLOSED' ? <Badge>Đã đóng</Badge> : <Badge tone="brand">Chưa làm</Badge>}
-                  {sess && sess.record === 'ACTIVE'
-                    ? <Btn kind="secondary" size="sm" onClick={() => go('report', { sessionId: sess.id })}>Xem kết quả</Btn>
-                    : a.status === 'OPEN' ? <Btn kind="secondary" size="sm" onClick={() => go('prepare', { caseId: c.id })}>Làm bài</Btn> : null}
+                <div className="list-row" key={c.id}>
+                  <button className="play" aria-label={`Chuẩn bị ca ${c.title}`} onClick={() => go('prepare', { caseId: c.id })}><Play size={16} fill="currentColor" aria-hidden /></button>
+                  <div className="grow"><b>{c.title}</b><div className="small muted">Thân chủ {c.clientName}, {c.minutes} phút</div></div>
+                  {a ? (submitted(a.id) ? <Badge tone="ok"><Check size={13} aria-hidden />Đã nộp</Badge> : <Badge tone="brand">Hạn {a.due.slice(0, 5)}</Badge>) : <Badge>{c.difficulty}</Badge>}
                 </div>
               );
             })}
           </div>
-        </section>
-        <section className="panel stack">
-          <div className="panel-head"><h2>Kỹ năng gần nhất</h2>{last && <span className="small muted">Phiên {last.endedAt.slice(0, 5)}</span>}</div>
-          {last?.report ? <div className="stack" style={{ gap: 10 }}>
-            {last.report.scores.map(s => (
-              <div key={s.skill} className="row between" style={{ flexWrap: 'nowrap' }}>
-                <span className="small grow">{SKILLS.find(x => x.code === s.skill)!.name}</span>
-                <Meter level={s.level} compact />
-              </div>
-            ))}
-            <p className="small muted">Đề xuất của AI để bạn tự đánh giá, không phải điểm học phần.</p>
-          </div> : <p className="muted">Hoàn thành phiên đầu tiên để xem kỹ năng của bạn tại đây.</p>}
         </section>
       </div>
     </div>
@@ -100,9 +110,9 @@ export const Library = () => {
       {shown.length ? <div className="grid-3">
         {shown.map(c => (
           <article className="case-card" key={c.id}>
-            <div className="pic" role="img" aria-label={`Thân chủ ${c.clientName}`} style={{ backgroundImage: `url(${roomImage(c.avatar)})` }} />
+            <div className="pic" role="img" aria-label={`Thân chủ ${c.clientName}`} style={{ backgroundImage: `url(${roomImage(c.avatar)})`, viewTransitionName: `case-${c.id}` }} />
             <div className="body">
-              <div className="row between"><h2>{c.title}</h2></div>
+              <h2>{c.title}</h2>
               <p className="small muted">{c.summary}</p>
               <div className="chips">{c.skills.map(s => <span key={s} className="tag">{s}</span>)}</div>
               <div className="foot">
@@ -126,6 +136,7 @@ export const Prepare = () => {
   return (
     <div className="page">
       <PageHead back={{ label: 'Thư viện ca', to: 'library' }} title={c.title} sub={c.summary} />
+      <div className="prep-hero" role="img" aria-label={`Thân chủ ${c.clientName} trong phòng tham vấn`} style={{ backgroundImage: `url(${roomImage(c.avatar)})`, viewTransitionName: `case-${c.id}` }} />
       <div className="grid-2">
         <div className="stack lg">
           <section className="panel stack">

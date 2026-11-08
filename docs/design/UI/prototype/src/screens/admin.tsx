@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { AlertTriangle, CheckCircle2, FileUp, KeyRound, Lock, RotateCcw, ShieldCheck, Unlock, UserPlus, XCircle } from 'lucide-react';
 import { RecordStatus, Role, Session, USAGE, User } from '../data';
 import { logAudit, setState, toast, updateSession, useStore } from '../store';
-import { Badge, Btn, Field, Modal, Notice, PageHead } from '../ui';
+import { Badge, Btn, CountUp, Field, Modal, Notice, PageHead } from '../ui';
 
 const ADMIN = 'Trần Quốc Bảo';
 const ROLE: Record<Role, string> = { student: 'Sinh viên', lecturer: 'Giảng viên', admin: 'Quản trị viên' };
@@ -81,7 +81,7 @@ export const AdmClasses = () => {
         <aside className="panel stack">
           <h2>Danh sách lớp</h2>
           <div>{classes.map(k => (
-            <button key={k.id} className="screen-link" style={{ width: '100%', flexDirection: 'column', gap: 0, background: k.id === sel ? 'var(--brand-soft)' : undefined }} aria-pressed={k.id === sel} onClick={() => setSel(k.id)}>
+            <button key={k.id} className="screen-link" style={{ width: '100%', flexDirection: 'column', gap: 0, background: k.id === sel ? 'var(--card-2)' : undefined }} aria-pressed={k.id === sel} onClick={() => setSel(k.id)}>
               <span>{k.name}</span><span className="small muted">{users.find(u => u.id === k.lecturerId)!.name}, {k.students.length} sinh viên</span>
             </button>
           ))}</div>
@@ -111,9 +111,9 @@ export const AdmData = () => {
     <div className="page wide">
       <PageHead title="Dữ liệu phiên" sub="Dữ liệu không bị xóa hẳn. Sau 14 ngày phiên tự chuyển sang Đã lưu trữ và chỉ quản trị viên xem được." />
       <div className="grid-3">
-        <div className="stat"><b>{count('ACTIVE')}</b><span>Đang hiệu lực</span></div>
-        <div className="stat"><b>{count('ARCHIVED')}</b><span>Đã lưu trữ</span></div>
-        <div className="stat"><b>{count('DELETED')}</b><span>Đã xóa mềm</span></div>
+        <div className="stat"><span className="big"><CountUp value={count('ACTIVE')} /></span><span>Đang hiệu lực</span></div>
+        <div className="stat"><span className="big"><CountUp value={count('ARCHIVED')} /></span><span>Đã lưu trữ</span></div>
+        <div className="stat"><span className="big"><CountUp value={count('DELETED')} /></span><span>Đã xóa mềm</span></div>
       </div>
       <div className="chips" role="group" aria-label="Lọc theo trạng thái">{(['ALL', 'ACTIVE', 'ARCHIVED', 'DELETED'] as const).map(r => <button key={r} className="chip" aria-pressed={r === f} onClick={() => setF(r)}>{r === 'ALL' ? 'Tất cả' : REC[r].label}</button>)}</div>
       <section className="panel flush"><div className="table-wrap"><table className="t">

@@ -102,11 +102,13 @@ Canvas nằm trong error boundary riêng và được tải trễ. Nếu Canvas 
 
 ### 4.4. Quy trình tài sản 3D
 
-1. Dựng phòng và nhân vật trong Blender.
-2. Xuất GLB, nén hình học bằng Meshopt, nén texture sang KTX2 bằng `gltf-transform`.
-3. Lưu tệp nguồn bằng Git LFS, tệp build có mã băm trong tên để cache lâu dài.
+Prototype tại `docs/design/UI/prototype` đã chạy thử quy trình này:
 
-Nguồn nhân vật gợi ý: MPFB (MakeHuman cho Blender) cho nhân vật và Mixamo cho hoạt ảnh. Các nguồn tham khảo cho biết đầu ra MakeHuman theo CC0 và Mixamo cho phép dùng thương mại miễn phí nhưng không phân phối lại như tài sản rời. Đây là nguồn thứ cấp, nên cần đọc điều khoản chính thức trước khi dùng (OI-10). Nhân vật nên trông như người Việt Nam và không theo phong cách hoạt hình.
+1. Nội thất và vật liệu lấy từ Poly Haven (giấy phép CC0). `tools/fetch-assets.py` tải về, `tools/prepare-textures.py` thu nhỏ texture sang WebP, `tools/build-assets.mjs` gộp thành một tệp GLB và nén.
+2. Nhân vật thân chủ theo phong cách minh họa, dựng bằng hàm khoảng cách (SDF) trong `tools/build-characters.mjs`. Các khối hòa vào nhau liền mạch như đất sét nặn, có khung xương thân trên để thở, nghiêng đầu và cử chỉ tay. Mắt, lông mày, miệng, má được gắn lúc chạy để đổi biểu cảm theo cảm xúc.
+3. Tài sản được nhúng dạng gzip và giải nén bằng `DecompressionStream` của trình duyệt, không cần WebAssembly hay tải mạng.
+
+Về phong cách nhân vật: bản thử với nhân vật tả thực (Microsoft Rocketbox) bị khách đánh giá là đáng sợ, do hiệu ứng "thung lũng kỳ lạ" khi nhân vật gần giống người thật nhưng ánh mắt và nét mặt cứng. Bản đầu vì vậy dùng phong cách minh họa thân thiện. Bản chính thức nên giao họa sĩ 3D hoàn thiện theo cùng phong cách và thử với giảng viên, sinh viên trước khi chốt (OI-10).
 
 Lưu ý về chạy offline: một số helper của drei mặc định tải bộ giải nén từ CDN bên ngoài. Phải đặt đường dẫn giải nén về tệp tự lưu trữ, nếu không phòng 3D sẽ không tải được trên mạng không có internet (NFR-COMP-05).
 
