@@ -1,4 +1,4 @@
-"""Sinh hai lớp nền lá nhiệt đới tông xanh: lớp sau phủ kín, lớp trước trong suốt để tạo chiều sâu khi lá đung đưa.
+"""Sinh hai lớp nền lá nhiệt đới tông xanh trời sáng: lớp sau phủ kín, lớp trước trong suốt để tạo chiều sâu khi lá đung đưa.
 Dùng: python tools/make-leaves.py src/assets"""
 import math, random, sys
 
@@ -57,26 +57,26 @@ def banana(cx, cy, angle, length, color, rib):
 
 
 random.seed(7)
-back = [f'<rect width="{W}" height="{H}" fill="#4F6C9E"/>']
-# Lớp xa: tông tối, lá lớn
+back = ['<defs><linearGradient id="sky" x1="0" y1="0" x2=".35" y2="1"><stop offset="0" stop-color="#F3F9FF"/><stop offset=".55" stop-color="#DCEBFF"/><stop offset="1" stop-color="#C8DFFF"/></linearGradient></defs>', f'<rect width="{W}" height="{H}" fill="url(#sky)"/>']
+# Lớp xa: nhạt gần như hoà vào trời, lá lớn
 for _ in range(9):
-    back += palm(random.uniform(-100, W + 100), random.uniform(H * .5, H + 200), random.uniform(-2.4, -.7), random.uniform(500, 820), '#5B78AA', '#4D6A9C')
+    back += palm(random.uniform(-100, W + 100), random.uniform(H * .5, H + 200), random.uniform(-2.4, -.7), random.uniform(500, 820), '#CFE2FD', '#BDD5FA')
 for _ in range(4):
-    back += banana(random.uniform(0, W), random.uniform(0, H), random.uniform(0, 6.28), random.uniform(520, 720), '#6582B4', '#5674A6')
-# Lớp giữa: sáng hơn
+    back += banana(random.uniform(0, W), random.uniform(0, H), random.uniform(0, 6.28), random.uniform(520, 720), '#C6DCFC', '#B3CEF7')
+# Lớp giữa: đậm hơn một nấc
 for _ in range(8):
-    back += palm(random.uniform(-150, W + 150), random.choice([random.uniform(-150, 100), random.uniform(H - 50, H + 150)]), random.uniform(0, 6.28), random.uniform(420, 680), '#7590C0', '#6681B2')
+    back += palm(random.uniform(-150, W + 150), random.choice([random.uniform(-150, 100), random.uniform(H - 50, H + 150)]), random.uniform(0, 6.28), random.uniform(420, 680), '#B8D3FA', '#A5C5F5')
 for _ in range(4):
-    back += banana(random.uniform(0, W), random.uniform(0, H), random.uniform(0, 6.28), random.uniform(380, 560), '#6E8BBE', '#5F7CAE')
+    back += banana(random.uniform(0, W), random.uniform(0, H), random.uniform(0, 6.28), random.uniform(380, 560), '#BFD8FB', '#A9C8F6')
 for _ in range(3):
-    back += banana(random.uniform(0, W), random.uniform(0, H), random.uniform(0, 6.28), random.uniform(420, 600), '#819CCA', '#6F8ABA')
+    back += banana(random.uniform(0, W), random.uniform(0, H), random.uniform(0, 6.28), random.uniform(420, 600), '#ADCCF8', '#98BDF2')
 
 front = []
-# Lớp gần: vài lá sáng ở mép khung hình
+# Lớp gần: vài lá xanh trời rõ nét ở mép khung hình
 for x, y, a in [(-60, 120, .2), (W + 40, 80, 2.7), (W + 60, H - 80, -2.6), (120, H + 40, -1.2), (W * .55, -60, 1.5)]:
-    front += palm(x, y, a + random.uniform(-.2, .2), random.uniform(420, 600), '#93ACD8', '#829CC9', leaflets=22, width=.06)
+    front += palm(x, y, a + random.uniform(-.2, .2), random.uniform(420, 600), '#9EC4F6', '#88B4EF', leaflets=22, width=.06)
 for x, y in [(W - 120, H * .45), (60, H * .62)]:
-    front += banana(x, y, random.uniform(0, 6.28), 520, '#A2B9E2', '#8FA8D6')
+    front += banana(x, y, random.uniform(0, 6.28), 520, '#A7CBF7', '#8FB9F0')
 
 
 def svg(parts, name):
