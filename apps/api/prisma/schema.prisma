@@ -1,0 +1,539 @@
+// Mô hình dữ liệu theo docs/srs/04-data-model.md.
+// Tên bảng và cột dùng snake_case trong CSDL, camelCase trong mã.
+
+generator client {
+  provider     = "prisma-client"
+  output       = "../src/generated/prisma"
+  moduleFormat = "cjs"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------- Trạng thái ----------
+
+enum Role {
+  STUDENT
+  LECTURER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  LOCKED
+  DISABLED
+}
+
+enum ClassStatus {
+  ACTIVE
+  ARCHIVED
+}
+
+enum MemberRole {
+  STUDENT
+  LECTURER
+}
+
+enum CaseStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+/// Kết quả đối chiếu nội dung ca với giáo trình (OI-02). Tài liệu chưa nêu giá trị, đặt tạm ba mức.
+enum ContentReviewStatus {
+  PENDING
+  APPROVED
+  CHANGES_REQUESTED
+}
+
+enum AssignmentStatus {
+  OPEN
+  CLOSED
+  ARCHIVED
+}
+
+enum TargetType {
+  CLASS
+  USER
+}
+
+enum SessionStatus {
+  IN_PROGRESS
+  ENDED
+  ABANDONED
+}
+
+enum RecordStatus {
+  ACTIVE
+  ARCHIVED
+  DELETED
+}
+
+enum RenderMode {
+  THREE_D
+  LITE_2D
+}
+
+enum Speaker {
+  STUDENT
+  CLIENT
+  SYSTEM
+}
+
+enum InputMode {
+  VOICE
+  TEXT
+}
+
+enum Emotion {
+  NEUTRAL
+  ANXIOUS
+  SAD
+  TENSE
+  RELIEVED
+  HESITANT
+}
+
+enum AssessmentStatus {
+  PENDING
+  PROCESSING
+  READY
+  FAILED
+}
+
+enum SkillCode {
+  ACTIVE_LISTENING
+  OPEN_QUESTIONS
+  EMPATHY
+  SUMMARIZING
+  AUTONOMY
+  ETHICS_SAFETY
+}
+
+enum SubmissionStatus {
+  SUBMITTED
+  WITHDRAWN
+}
+
+/// Tài liệu 07 chỉ nêu HIGH. Đặt thêm hai mức thấp hơn để ghi nhận các tín hiệu nhẹ.
+enum SafetyLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+enum HandlingStatus {
+  NEW
+  ACKNOWLEDGED
+  CLOSED
+}
+
+enum AiUsageKind {
+  CONVERSATION
+  ASSESSMENT
+  STT
+}
+
+enum AiOutcome {
+  SUCCESS
+  ERROR
+  TIMEOUT
+}
+
+// ---------- Tài khoản và lớp ----------
+
+model User {
+  id                 String     @id @default(uuid(7)) @db.Uuid
+  username           String     @unique
+  fullName           String     @map("full_name")
+  passwordHash       String     @map("password_hash")
+  role               Role
+  status             UserStatus @default(ACTIVE)
+  mustChangePassword Boolean    @default(true) @map("must_change_password")
+  /// Số lần nhập sai liên tiếp, đặt lại khi đăng nhập thành công
+  failedLoginCount   Int        @default(0) @map("failed_login_count")
+  /// Khóa tạm do nhập sai nhiều lần (FR-AUTH-06). Khác với status LOCKED do quản trị viên khóa.
+  lockedUntil        DateTime?  @map("locked_until") @db.Timestamptz
+  lastLoginAt        DateTime?  @map("last_login_at") @db.Timestamptz
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  authSessions      AuthSession[]
+  memberships       ClassMember[]
+  ownedCases        Case[]              @relation("CaseOwner")
+  createdAssignments Assignment[]       @relation("AssignmentCreator")
+  assignmentTargets AssignmentTarget[]
+  practiceSessions  PracticeSession[]   @relation("SessionOwner")
+  deletedSessions   PracticeSession[]   @relation("SessionDeleter")
+  submissions       Submission[]
+  reviewedAssessments Assessment[]
+  handledSafetyEvents SafetyEvent[]
+  auditLogs         AuditLog[]
+  updatedSettings   SystemSetting[]
+
+  @@map("users")
+}
+
+model AuthSession {
+  id        String    @id @default(uuid(7)) @db.Uuid
+  userId    String    @map("user_id") @db.Uuid
+  /// SHA-256 của token trong cookie. Không lưu token gốc.
+  tokenHash String    @unique @map("token_hash")
+  expiresAt DateTime  @map("expires_at") @db.Timestamptz
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+  ip        String?
+  userAgent String?   @map("user_agent")
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([userId])
+  @@map("auth_sessions")
+}
+
+model Class {
+  id        String      @id @default(uuid(7)) @db.Uuid
+  name      String
+  term      String?
+  status    ClassStatus @default(ACTIVE)
+  createdAt DateTime    @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime    @updatedAt @map("updated_at") @db.Timestamptz
+
+  members ClassMember[]
+  targets AssignmentTarget[]
+
+  @@map("classes")
+}
+
+model ClassMember {
+  id         String     @id @default(uuid(7)) @db.Uuid
+  classId    String     @map("class_id") @db.Uuid
+  userId     String     @map("user_id") @db.Uuid
+  memberRole MemberRole @map("member_role")
+  createdAt  DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  class Class @relation(fields: [classId], references: [id])
+  user  User  @relation(fields: [userId], references: [id])
+
+  @@unique([classId, userId])
+  @@index([userId])
+  @@map("class_members")
+}
+
+// ---------- Ca mô phỏng ----------
+
+model Case {
+  id               String     @id @default(uuid(7)) @db.Uuid
+  title            String
+  status           CaseStatus @default(DRAFT)
+  ownerId          String     @map("owner_id") @db.Uuid
+  currentVersionId String?    @unique @map("current_version_id") @db.Uuid
+  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  owner          User          @relation("CaseOwner", fields: [ownerId], references: [id])
+  currentVersion CaseVersion?  @relation("CurrentVersion", fields: [currentVersionId], references: [id])
+  versions       CaseVersion[] @relation("CaseVersions")
+
+  @@map("cases")
+}
+
+/// Phiên bản không đổi của ca. Không được sửa sau khi xuất bản.
+model CaseVersion {
+  id                  String              @id @default(uuid(7)) @db.Uuid
+  caseId              String              @map("case_id") @db.Uuid
+  versionNo           Int                 @map("version_no")
+  /// Hồ sơ ca theo docs/srs/04 mục 5
+  profile             Json
+  rubric              Json
+  difficulty          Int
+  skills              SkillCode[]
+  maxDurationMin      Int                 @map("max_duration_min")
+  avatarKey           String              @map("avatar_key")
+  contentReviewStatus ContentReviewStatus @default(PENDING) @map("content_review_status")
+  publishedAt         DateTime?           @map("published_at") @db.Timestamptz
+  createdAt           DateTime            @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime            @updatedAt @map("updated_at") @db.Timestamptz
+
+  case             Case              @relation("CaseVersions", fields: [caseId], references: [id])
+  currentOf        Case?             @relation("CurrentVersion")
+  assignments      Assignment[]
+  practiceSessions PracticeSession[]
+
+  @@unique([caseId, versionNo])
+  @@map("case_versions")
+}
+
+// ---------- Giao bài và nộp bài ----------
+
+model Assignment {
+  id            String           @id @default(uuid(7)) @db.Uuid
+  caseVersionId String           @map("case_version_id") @db.Uuid
+  createdById   String           @map("created_by") @db.Uuid
+  title         String
+  dueAt         DateTime?        @map("due_at") @db.Timestamptz
+  status        AssignmentStatus @default(OPEN)
+  createdAt     DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  caseVersion      CaseVersion        @relation(fields: [caseVersionId], references: [id])
+  createdBy        User               @relation("AssignmentCreator", fields: [createdById], references: [id])
+  targets          AssignmentTarget[]
+  submissions      Submission[]
+  practiceSessions PracticeSession[]
+
+  @@map("assignments")
+}
+
+model AssignmentTarget {
+  id           String     @id @default(uuid(7)) @db.Uuid
+  assignmentId String     @map("assignment_id") @db.Uuid
+  targetType   TargetType @map("target_type")
+  classId      String?    @map("class_id") @db.Uuid
+  userId       String?    @map("user_id") @db.Uuid
+  createdAt    DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  assignment Assignment @relation(fields: [assignmentId], references: [id])
+  class      Class?     @relation(fields: [classId], references: [id])
+  user       User?      @relation(fields: [userId], references: [id])
+
+  @@index([assignmentId])
+  @@map("assignment_targets")
+}
+
+model Submission {
+  id           String           @id @default(uuid(7)) @db.Uuid
+  assignmentId String           @map("assignment_id") @db.Uuid
+  sessionId    String           @unique @map("session_id") @db.Uuid
+  studentId    String           @map("student_id") @db.Uuid
+  status       SubmissionStatus @default(SUBMITTED)
+  isLate       Boolean          @default(false) @map("is_late")
+  submittedAt  DateTime         @default(now()) @map("submitted_at") @db.Timestamptz
+  createdAt    DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  assignment Assignment      @relation(fields: [assignmentId], references: [id])
+  session    PracticeSession @relation(fields: [sessionId], references: [id])
+  student    User            @relation(fields: [studentId], references: [id])
+
+  @@index([assignmentId])
+  @@index([studentId])
+  @@map("submissions")
+}
+
+// ---------- Phiên thực hành ----------
+
+model PracticeSession {
+  id             String        @id @default(uuid(7)) @db.Uuid
+  userId         String        @map("user_id") @db.Uuid
+  caseVersionId  String        @map("case_version_id") @db.Uuid
+  assignmentId   String?       @map("assignment_id") @db.Uuid
+  status         SessionStatus @default(IN_PROGRESS)
+  renderMode     RenderMode    @default(THREE_D) @map("render_mode")
+  /// Trạng thái do dịch vụ AI trả về, backend giữ nguyên và gửi lại ở lượt sau
+  clientState    Json?         @map("client_state")
+  startedAt      DateTime      @default(now()) @map("started_at") @db.Timestamptz
+  endedAt        DateTime?     @map("ended_at") @db.Timestamptz
+  lastActivityAt DateTime      @default(now()) @map("last_activity_at") @db.Timestamptz
+  recordStatus   RecordStatus  @default(ACTIVE) @map("record_status")
+  retentionUntil DateTime?     @map("retention_until") @db.Timestamptz
+  deletedAt      DateTime?     @map("deleted_at") @db.Timestamptz
+  deletedById    String?       @map("deleted_by") @db.Uuid
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  user         User          @relation("SessionOwner", fields: [userId], references: [id])
+  deletedBy    User?         @relation("SessionDeleter", fields: [deletedById], references: [id])
+  caseVersion  CaseVersion   @relation(fields: [caseVersionId], references: [id])
+  assignment   Assignment?   @relation(fields: [assignmentId], references: [id])
+  messages     Message[]
+  assessment   Assessment?
+  reflection   Reflection?
+  submission   Submission?
+  safetyEvents SafetyEvent[]
+  aiUsage      AiUsage[]
+
+  @@index([userId])
+  @@index([recordStatus, retentionUntil])
+  @@map("practice_sessions")
+}
+
+model Message {
+  id            String     @id @default(uuid(7)) @db.Uuid
+  sessionId     String     @map("session_id") @db.Uuid
+  seq           Int
+  speaker       Speaker
+  content       String
+  inputMode     InputMode? @map("input_mode")
+  sttConfidence Float?     @map("stt_confidence")
+  sttEdited     Boolean    @default(false) @map("stt_edited")
+  emotion       Emotion?
+  /// Mã lượt do trình duyệt sinh, chống tạo lượt trùng khi gửi lại
+  clientTurnId  String?    @map("client_turn_id")
+  createdAt     DateTime   @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime   @updatedAt @map("updated_at") @db.Timestamptz
+
+  session      PracticeSession      @relation(fields: [sessionId], references: [id])
+  evidence     AssessmentEvidence[]
+  safetyEvents SafetyEvent[]
+
+  @@unique([sessionId, seq])
+  @@unique([sessionId, clientTurnId])
+  @@map("messages")
+}
+
+// ---------- Báo cáo sau phiên ----------
+
+model Assessment {
+  id                  String           @id @default(uuid(7)) @db.Uuid
+  sessionId           String           @unique @map("session_id") @db.Uuid
+  status              AssessmentStatus @default(PENDING)
+  summary             String?
+  strengths           Json?
+  improvements        Json?
+  reflectionQuestions Json?            @map("reflection_questions")
+  practiceGoals       Json?            @map("practice_goals")
+  limitationNote      String?          @map("limitation_note")
+  aiVersion           String?          @map("ai_version")
+  lecturerComment     String?          @map("lecturer_comment")
+  reviewedById        String?          @map("reviewed_by") @db.Uuid
+  reviewedAt          DateTime?        @map("reviewed_at") @db.Timestamptz
+  createdAt           DateTime         @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt           DateTime         @updatedAt @map("updated_at") @db.Timestamptz
+
+  session    PracticeSession   @relation(fields: [sessionId], references: [id])
+  reviewedBy User?             @relation(fields: [reviewedById], references: [id])
+  scores     AssessmentScore[]
+
+  @@map("assessments")
+}
+
+model AssessmentScore {
+  id            String    @id @default(uuid(7)) @db.Uuid
+  assessmentId  String    @map("assessment_id") @db.Uuid
+  skillCode     SkillCode @map("skill_code")
+  /// Chỉ backend ghi. null là chưa đủ dữ liệu.
+  aiLevel       Int?      @map("ai_level")
+  aiRationale   String?   @map("ai_rationale")
+  lecturerLevel Int?      @map("lecturer_level")
+  lecturerNote  String?   @map("lecturer_note")
+  needsReview   Boolean   @default(false) @map("needs_review")
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  assessment Assessment           @relation(fields: [assessmentId], references: [id])
+  evidence   AssessmentEvidence[]
+
+  @@unique([assessmentId, skillCode])
+  @@map("assessment_scores")
+}
+
+model AssessmentEvidence {
+  id        String   @id @default(uuid(7)) @db.Uuid
+  scoreId   String   @map("score_id") @db.Uuid
+  messageId String?  @map("message_id") @db.Uuid
+  quote     String
+  /// Trích dẫn khớp với transcript hay không
+  verified  Boolean  @default(false)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  score   AssessmentScore @relation(fields: [scoreId], references: [id])
+  message Message?        @relation(fields: [messageId], references: [id])
+
+  @@index([scoreId])
+  @@map("assessment_evidence")
+}
+
+model Reflection {
+  id          String    @id @default(uuid(7)) @db.Uuid
+  sessionId   String    @unique @map("session_id") @db.Uuid
+  answers     Json
+  nextGoal    String?   @map("next_goal")
+  submittedAt DateTime? @map("submitted_at") @db.Timestamptz
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  session PracticeSession @relation(fields: [sessionId], references: [id])
+
+  @@map("reflections")
+}
+
+// ---------- An toàn, mức dùng AI, nhật ký, cấu hình ----------
+
+model SafetyEvent {
+  id             String         @id @default(uuid(7)) @db.Uuid
+  sessionId      String         @map("session_id") @db.Uuid
+  messageId      String?        @map("message_id") @db.Uuid
+  level          SafetyLevel
+  handlingStatus HandlingStatus @default(NEW) @map("handling_status")
+  handledById    String?        @map("handled_by") @db.Uuid
+  note           String?
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt      DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  session   PracticeSession @relation(fields: [sessionId], references: [id])
+  message   Message?        @relation(fields: [messageId], references: [id])
+  handledBy User?           @relation(fields: [handledById], references: [id])
+
+  @@index([sessionId])
+  @@index([handlingStatus])
+  @@map("safety_events")
+}
+
+/// Chỉ ghi thêm
+model AiUsage {
+  id            String      @id @default(uuid(7)) @db.Uuid
+  sessionId     String?     @map("session_id") @db.Uuid
+  kind          AiUsageKind
+  model         String?
+  inputTokens   Int?        @map("input_tokens")
+  outputTokens  Int?        @map("output_tokens")
+  audioSeconds  Float?      @map("audio_seconds")
+  latencyMs     Int?        @map("latency_ms")
+  outcome       AiOutcome
+  estimatedCost Decimal?    @map("estimated_cost") @db.Decimal(12, 6)
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz
+
+  session PracticeSession? @relation(fields: [sessionId], references: [id])
+
+  @@index([sessionId])
+  @@index([createdAt])
+  @@map("ai_usage")
+}
+
+/// Nhật ký kiểm toán, chỉ ghi thêm, không sửa được từ giao diện (NFR-SEC-10)
+model AuditLog {
+  id         String   @id @default(uuid(7)) @db.Uuid
+  actorId    String?  @map("actor_id") @db.Uuid
+  action     String
+  entityType String?  @map("entity_type")
+  entityId   String?  @map("entity_id")
+  before     Json?
+  after      Json?
+  ip         String?
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  actor User? @relation(fields: [actorId], references: [id])
+
+  @@index([actorId])
+  @@index([action, createdAt])
+  @@map("audit_logs")
+}
+
+model SystemSetting {
+  key         String   @id
+  value       Json
+  updatedById String?  @map("updated_by") @db.Uuid
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  updatedBy User? @relation(fields: [updatedById], references: [id])
+
+  @@map("system_settings")
+}

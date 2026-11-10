@@ -1,0 +1,31 @@
+# SITE_ADDRESS là tên miền thật khi triển khai (docs/srs/06 mục 7.1).
+# Mặc định localhost: Caddy tự cấp chứng chỉ từ CA nội bộ (tls internal).
+{$SITE_ADDRESS:localhost} {
+	encode zstd gzip
+
+	# Luồng SSE của phiên thực hành: đẩy từng sự kiện ngay, không gom bộ đệm
+	@sse path_regexp sse ^/api/sessions/[^/]+/events$
+	handle @sse {
+		reverse_proxy api:4000 {
+			flush_interval -1
+		}
+	}
+
+	handle /api/* {
+		reverse_proxy api:4000
+	}
+
+	handle {
+		reverse_proxy web:3000
+	}
+
+	header {
+		Strict-Transport-Security "max-age=31536000"
+		-Server
+	}
+
+	log {
+		output stdout
+		format json
+	}
+}
