@@ -97,22 +97,8 @@ export const Field = ({ id, label, hint, children }: { id: string; label: string
 
 export const BrandMark = ({ small }: { small?: boolean }) => <span className={`brand-mark ${small ? 'sm' : ''}`} aria-hidden><UserRound size={small ? 18 : 42} strokeWidth={2.2} /></span>;
 
-// Nền lá nhiệt đới hai lớp, lệch nhẹ theo con trỏ để tạo chiều sâu
+// Nền lá nhiệt đới hai lớp, đứng yên hoàn toàn để không gây xao nhãng
 export const Leaves = () => {
-  useEffect(() => {
-    if (calmMotion()) return;
-    let raf = 0;
-    const onMove = (e: PointerEvent) => {
-      cancelAnimationFrame(raf);
-      raf = requestAnimationFrame(() => {
-        const r = document.documentElement.style;
-        r.setProperty('--mx', ((e.clientX / innerWidth) * 2 - 1).toFixed(3));
-        r.setProperty('--my', ((e.clientY / innerHeight) * 2 - 1).toFixed(3));
-      });
-    };
-    window.addEventListener('pointermove', onMove);
-    return () => { window.removeEventListener('pointermove', onMove); cancelAnimationFrame(raf); };
-  }, []);
   return <div className="leaves" aria-hidden><i className="back" style={{ backgroundImage: `url("${leavesBack}")` }} /><i className="front" style={{ backgroundImage: `url("${leavesFront}")` }} /></div>;
 };
 

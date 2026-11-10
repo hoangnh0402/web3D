@@ -93,7 +93,7 @@ export const ScreenMap = () => (
 );
 
 const COLORS: [string, [string, string][]][] = [
-  ['Navy và xanh trời', [['navy-950', 'Thanh bên, viền thẻ'], ['navy-900', 'Tiêu đề'], ['navy', 'Hành động chính'], ['navy-700', 'Khi di chuột'], ['accent', 'Mục đang chọn'], ['sky', 'Biểu tượng thanh bên'], ['sky-2', 'Chữ thanh bên']]],
+  ['Xanh dương và xanh trời', [['navy-950', 'Mục đang chọn, nút phát'], ['navy-900', 'Tiêu đề'], ['navy', 'Hành động chính'], ['navy-700', 'Khi di chuột'], ['accent', 'Mục đang chọn'], ['sky', 'Biểu tượng thanh bên'], ['sky-2', 'Chữ thanh bên']]],
   ['Thẻ và nền', [['card-solid', 'Thẻ'], ['card-2', 'Nền chìm'], ['card-3', 'Ô nhập'], ['line', 'Đường kẻ'], ['track', 'Rãnh tiến độ'], ['bg', 'Nền lá']]],
   ['Chữ', [['ink', 'Chữ chính'], ['ink-2', 'Chữ phụ'], ['ink-3', 'Chú thích']]],
   ['Trạng thái', [['ok', 'Tốt'], ['ok-soft', 'Tốt, nền'], ['warn', 'Chú ý'], ['warn-soft', 'Chú ý, nền'], ['danger', 'Nguy hiểm'], ['danger-soft', 'Nguy hiểm, nền']]],

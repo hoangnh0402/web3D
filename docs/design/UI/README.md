@@ -2,7 +2,7 @@
 
 Thiết kế giao diện cho bản đầu của Lab FourT, bám theo [bộ SRS](../../srs/README.md). Mã màn hình `SCR-nn` khớp với tài liệu 05 của SRS.
 
-Phong cách theo mẫu khách chọn: thanh bên navy, nền lá nhiệt đới đơn sắc xanh, thẻ kính xanh nhạt viền navy, nút bo tròn, đồng hồ vòng cung và thanh tiến độ.
+Phong cách theo mẫu khách chọn: thanh bên navy, nền lá nhiệt đới xanh trời sáng, thẻ kính xanh nhạt viền navy, nút bo tròn, đồng hồ vòng cung và thanh tiến độ.
 
 ## Nội dung thư mục
 
@@ -32,7 +32,7 @@ Nút **Demo** màu xanh dành cho người trình bày:
 | Chuyển trang | Nội dung trượt lên và mờ dần, thanh bên đứng yên. Ảnh thẻ ca phóng thành ảnh bìa ở trang chuẩn bị |
 | Nội dung trang | Các thẻ xuất hiện lần lượt |
 | Trang chủ | Đồng hồ vòng cung quét dần, số liệu đếm tăng, thanh tiến độ dài ra, vệt sáng lướt qua thẻ trọng tâm |
-| Nền | Hai lớp lá đung đưa chậm và lệch nhẹ theo con trỏ |
+| Nền | Hai lớp lá đung đưa chậm và lệch nhẹ theo con trỏ, các vầng sáng màu trôi chậm phía trên |
 | Điều hướng | Vệt sáng trượt theo mục đang chọn ở thanh bên và thanh dưới |
 | Phòng tham vấn | Camera lướt vào phòng, bụi lấp lánh trong vệt nắng, nhân vật thở, chớp mắt và đổi tư thế theo cảm xúc |
 | Hội thoại | Tin nhắn bật lên, thân chủ gõ chữ dần, vòng sóng quanh micro khi ghi âm |
@@ -85,15 +85,15 @@ Lưu ý khi nhập:
 
 ## Phòng và nhân vật 3D
 
-- **Căn phòng:** ghế, bàn, giá sách, chậu cây, sàn và tường lấy từ Poly Haven, giấy phép CC0.
-- **Nhân vật:** theo phong cách minh họa thân thiện. Bản thử với nhân vật tả thực bị đánh giá là đáng sợ nên đã thay. Ba nhân vật được nặn bằng hàm khoảng cách trong `prototype/tools/build-characters.mjs`, ngồi sẵn trên ghế, có khung xương thân trên.
-- **Biểu cảm:** mắt, lông mày, miệng và má gắn lúc chạy để đổi theo cảm xúc của thân chủ.
+- **Căn phòng:** nội thất Poly Haven (CC0), dựng sẵn bằng path tracing thành ảnh nền kèm đầu dò ánh sáng tại chỗ ngồi, nên nhân vật nhận đúng ánh sáng của phòng.
+- **Nhân vật:** tả thực, hiện đại. Hà Linh lấy từ thư viện VALID (MIT), hai thân chủ còn lại lấy từ Microsoft Rocketbox (MIT). Thân và tóc nhân vật VALID được chia mịn lúc nạp (`prototype/src/room/smooth.ts`), khuôn mặt giữ lưới gốc.
+- **Tư thế và biểu cảm:** dáng ngồi, tay đặt trên đùi, ánh nhìn và nhịp thở do IK tính lúc chạy (`prototype/src/room/rig.ts`). Khuôn mặt đổi biểu cảm và khẩu hình theo cảm xúc của thân chủ.
 
 | Thân chủ | Ca | Nhân vật |
 |---|---|---|
-| Hà Linh | Áp lực học tập | Tóc bob có mái, áo len xanh dịu |
-| Tuấn Kiệt | Khó khăn trong mối quan hệ | Tóc ngắn, áo xanh rêu |
-| Mai Phương | Thích nghi với thay đổi | Tóc dài, áo len hồng đất |
+| Hà Linh | Áp lực học tập | VALID, nữ châu Á, áo thun và quần jean |
+| Tuấn Kiệt | Khó khăn trong mối quan hệ | Rocketbox m10 |
+| Mai Phương | Thích nghi với thay đổi | Rocketbox f08 |
 
 ## Giới hạn của prototype
 
@@ -114,10 +114,13 @@ npm run build   # tạo dist/index.html, chép ra ../lab-fourt-prototype.html
 
 # Tài sản, chỉ cần khi thay đổi
 python tools/make-leaves.py src/assets                 # nền lá
-node tools/build-characters.mjs src/assets/3d          # ba nhân vật
+python tools/fetch-characters.py src/assets/3d         # Hà Linh, thư viện VALID (MIT)
+python tools/render-posters.py                         # ảnh 2D và thẻ ca, cần npm run dev
 python tools/fetch-assets.py <raw>                     # tải nội thất Poly Haven
 python tools/prepare-textures.py <raw> <tex>
-node tools/build-assets.mjs <raw> <tex> src/assets/3d  # gộp phòng
+node tools/build-assets.mjs <raw> <tex> <raw>          # gộp phòng
+node tools/bake.mjs ...                                # dựng ảnh nền, xem đầu tệp
+python tools/grade-plate.py ...                        # khử nhiễu, chỉnh màu ra room-plate.webp
 ```
 
 Phiên bản thư viện theo tài liệu 06 của SRS.
