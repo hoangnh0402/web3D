@@ -213,7 +213,7 @@ export const AdmLogs = () => {
       <input id="log-search" className="input" style={{ maxWidth: 340 }} aria-label="Tìm trong nhật ký" placeholder="Tìm theo người thực hiện hoặc hành động" value={q} onChange={e => setQ(e.target.value)} />
       <section className="panel flush"><div className="table-wrap"><table className="t">
         <thead><tr><th>Thời điểm</th><th>Người thực hiện</th><th>Hành động</th><th>Đối tượng</th><th>Chi tiết</th></tr></thead>
-        <tbody>{shown.map(a => <tr key={a.id}><td className="num">{a.at}</td><td>{a.actor}</td><td>{a.action}</td><td>{a.target}</td><td className="muted">{a.detail}</td></tr>)}</tbody>
+        <tbody>{shown.map(a => <tr key={a.id}><td className="num">{a.at}</td><td>{a.actor}</td><td>{a.action}</td><td>{a.target}</td><td className="muted wrap">{a.detail}</td></tr>)}</tbody>
       </table></div></section>
     </div>
   );

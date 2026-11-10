@@ -1,0 +1,6 @@
+# Tệp chạy trong container Linux phải giữ xuống dòng LF, kể cả khi checkout trên Windows
+*.sh text eol=lf
+Caddyfile text eol=lf
+*.Dockerfile text eol=lf
+Dockerfile text eol=lf
+*.yaml text eol=lf

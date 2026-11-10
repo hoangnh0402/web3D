@@ -99,8 +99,18 @@ a { color: var(--navy-700); }
 .panel.lift:hover, .stat:hover, .case-card:hover { transform: translateY(-4px); box-shadow: var(--shadow-lg); }
 .panel-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
 .panel.flush .panel-head { padding: 18px 22px; border-bottom: 1px solid var(--line); }
-.grid-2 { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 22px; align-items: start; }
-.grid-2-eq { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: start; }
+.grid-2 { display: grid; grid-template-columns: minmax(0, 1.55fr) minmax(0, 1fr); gap: 22px; align-items: stretch; }
+.grid-2-eq { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px; align-items: stretch; }
+/* Cân đối bố cục: hai khối đặt cạnh nhau luôn cao bằng nhau.
+   Cột phụ là nhóm thẻ (aside.stack) thì giữ chiều cao tự nhiên và bám theo khi cuộn, thay vì kéo dãn khoảng trống. */
+.grid-2 > aside.stack:not(.panel), .grid-2-eq > aside.stack:not(.panel) { align-self: start; position: sticky; top: 20px; }
+.grid-2 > .panel, .grid-2-eq > .panel { display: flex; flex-direction: column; }
+.grid-2 > .panel.stack, .grid-2-eq > .panel.stack { gap: 12px; }
+.grid-2 > .panel.stack.lg, .grid-2-eq > .panel.stack.lg { gap: 22px; }
+.reflect-card { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.reflect-card .panel-head { align-items: baseline; }
+.reflect-card .prompt { margin: 0; padding: 16px 18px; border-left: 4px solid var(--navy); border-radius: 12px; background: rgba(226, 238, 255, .7); color: var(--navy-900); font-size: 17px; line-height: 1.5; font-weight: 500; }
+.reflect-card .foot { margin-top: auto; padding-top: 4px; }
 .grid-3, .stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 22px; }
 .grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
 
@@ -191,9 +201,13 @@ a { color: var(--navy-700); }
 
 .table-wrap { overflow-x: auto; }
 table.t { width: 100%; border-collapse: collapse; font-size: 14px; }
-table.t th { text-align: left; font-weight: 600; font-size: 12.5px; color: var(--ink-3); padding: 12px 22px; white-space: nowrap; border-bottom: 1px solid var(--line); }
-table.t td { padding: 13px 22px; border-bottom: 1px solid rgba(186, 204, 235, .6); vertical-align: middle; }
+table.t th { text-align: left; font-weight: 600; font-size: 12.5px; color: var(--ink-3); padding: 12px 16px; white-space: nowrap; border-bottom: 1px solid var(--line); }
+table.t td { padding: 13px 16px; border-bottom: 1px solid rgba(186, 204, 235, .6); vertical-align: middle; white-space: nowrap; }
+/* Ô văn bản dài được xuống dòng; các ô còn lại giữ một dòng để các hàng cao đều nhau */
+table.t td.wrap { white-space: normal; min-width: 220px; }
 table.t tr:last-child td { border-bottom: 0; }
+table.t th:first-child, table.t td:first-child { padding-left: 22px; }
+table.t th:last-child, table.t td:last-child { padding-right: 22px; }
 table.t tbody tr { transition: background .2s; }
 table.t tbody tr:hover { background: rgba(255, 255, 255, .5); }
 table.t .act { text-align: right; white-space: nowrap; }
@@ -233,15 +247,15 @@ table.t .act { text-align: right; white-space: nowrap; }
 .demo-menu button:focus-visible { outline: 2px solid var(--sky); }
 
 /* ---------- Đăng nhập ---------- */
-.login { position: relative; min-height: 100%; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: center; gap: 40px; padding: 40px max(40px, env(safe-area-inset-right, 0px)) 40px max(40px, env(safe-area-inset-left, 0px)); }
+.login { position: relative; min-height: 100%; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); align-items: stretch; align-content: center; max-width: 1240px; margin-inline: auto; gap: 40px; padding: 40px max(40px, env(safe-area-inset-right, 0px)) 40px max(40px, env(safe-area-inset-left, 0px)); }
 .login > :not(.leaves) { position: relative; z-index: 1; }
 .login-art { border-radius: 28px; overflow: hidden; min-height: 520px; background: center 30% / cover no-repeat var(--navy-950); position: relative; display: flex; align-items: flex-end; padding: 34px; color: #fff; box-shadow: var(--shadow-lg), 0 0 0 1px rgba(255, 255, 255, .2); animation: rise .9s var(--ease) both; }
 .login-art::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(13, 23, 72, 0) 40%, rgba(13, 23, 72, .88) 100%); }
 .login-art > div { position: relative; z-index: 1; max-width: 46ch; }
 .login-art h1 { color: #fff; font-size: clamp(28px, 3.2vw, 40px); }
 .login-art p { color: #D4E3FF; margin-top: 10px; font-size: 16px; }
-.login-form { display: flex; justify-content: center; }
-.login-form > div { width: min(420px, 100%); display: flex; flex-direction: column; gap: 18px; background: var(--card-solid); border: 1.5px solid #CFE0FF; border-radius: 26px; padding: 32px; box-shadow: 0 0 0 6px rgba(91, 168, 236, .14), var(--shadow-lg); animation: rise .9s .12s var(--ease) both; }
+.login-form { display: flex; justify-content: center; align-items: stretch; }
+.login-form > div { width: min(440px, 100%); display: flex; flex-direction: column; justify-content: center; gap: 18px; background: var(--card-solid); border: 1.5px solid #CFE0FF; border-radius: 26px; padding: 32px; box-shadow: 0 0 0 6px rgba(91, 168, 236, .14), var(--shadow-lg); animation: rise .9s .12s var(--ease) both; }
 .login-form .brand { flex-direction: row; text-align: left; }
 .login-form .brand b { color: var(--navy); }
 .login-form .brand small { color: var(--ink-3); }
@@ -365,7 +379,9 @@ ul.clean { margin: 0; padding-left: 18px; display: flex; flex-direction: column;
 .editor { display: grid; grid-template-columns: 230px minmax(0, 1fr); gap: 22px; align-items: start; }
 
 .review { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 22px; align-items: start; }
-.review .log { max-height: 640px; overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 6px; }
+/* Transcript bám theo khi cuộn và cao theo màn hình, luôn đứng cạnh phần đánh giá */
+.review > :first-child { position: sticky; top: 20px; }
+.review .log { max-height: calc(100vh - 150px); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; padding-right: 6px; }
 .compare { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 10px; align-items: center; }
 
 /* ---------- Biểu đồ ---------- */

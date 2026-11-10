@@ -1,0 +1,23 @@
+# Chỉ PostgreSQL cho lúc phát triển. API và web chạy bằng `pnpm dev` trên máy.
+# Cổng chỉ mở ở 127.0.0.1 để không lộ ra mạng.
+name: lab-fourt-dev
+
+services:
+  postgres:
+    image: postgres:18.6
+    environment:
+      POSTGRES_USER: labfourt
+      POSTGRES_PASSWORD: labfourt
+      POSTGRES_DB: labfourt
+    ports:
+      - '127.0.0.1:55432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U labfourt -d labfourt']
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  pgdata:

@@ -1,0 +1,27 @@
+{
+  "name": "lab-fourt",
+  "private": true,
+  "packageManager": "pnpm@12.18.0",
+  "engines": {
+    "node": ">=24.10.0 <25"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @lab-fourt/api --filter @lab-fourt/web dev",
+    "lint": "pnpm -r lint",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build",
+    "format": "prettier --write .",
+    "db:migrate": "pnpm --filter @lab-fourt/api db:migrate",
+    "db:seed": "pnpm --filter @lab-fourt/api db:seed",
+    "e2e": "pnpm --filter @lab-fourt/web e2e"
+  },
+  "devDependencies": {
+    "@eslint/js": "10.0.1",
+    "eslint": "10.14.0",
+    "globals": "17.14.0",
+    "prettier": "3.9.10",
+    "typescript": "6.0.3",
+    "typescript-eslint": "8.72.2"
+  }
+}
