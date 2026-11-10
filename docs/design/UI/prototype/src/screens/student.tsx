@@ -63,12 +63,20 @@ export const Home = () => {
           <Bar value={strong / 6} />
         </div>
       </div>
-      <div className="grid-2-eq">
-        <section className="panel lift stack">
-          <h2>Câu hỏi phản tư</h2>
-          <p style={{ fontSize: 16 }}>{last?.report?.questions[0] ?? 'Hoàn thành phiên đầu tiên để nhận câu hỏi phản tư.'}</p>
-          {last && <p className="small muted">Từ phiên {cases.find(c => c.id === last.caseId)!.title}, {last.endedAt.slice(0, 5)}</p>}
-          {last && <div><Btn kind="secondary" icon={PencilLine} onClick={() => go('reflection', { sessionId: last.id })}>Viết phản tư</Btn></div>}
+      <div className="grid-2-eq even">
+        <section className="panel lift reflect-card">
+          <div className="panel-head">
+            <h2>Câu hỏi phản tư</h2>
+            {last && <span className="small muted">Từ phiên {cases.find(c => c.id === last.caseId)!.title}, {last.endedAt.slice(0, 5)}</span>}
+          </div>
+          <blockquote className="prompt">{last?.report?.questions[0] ?? 'Hoàn thành phiên đầu tiên để nhận câu hỏi phản tư.'}</blockquote>
+          {!!last?.report?.goals.length && (
+            <div className="stack" style={{ gap: 6 }}>
+              <h3>Mục tiêu lần sau</h3>
+              <ul className="clean small">{last.report.goals.slice(0, 2).map(g => <li key={g}>{g}</li>)}</ul>
+            </div>
+          )}
+          {last && <div className="foot"><Btn kind="secondary" icon={PencilLine} onClick={() => go('reflection', { sessionId: last.id })}>Viết phản tư</Btn></div>}
         </section>
         <section className="panel lift stack">
           <div className="panel-head"><h2>Ca thực hành</h2><Btn kind="ghost" size="sm" onClick={() => go('library')}>Xem tất cả</Btn></div>

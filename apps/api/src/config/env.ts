@@ -15,6 +15,9 @@ const envSchema = z.object({
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
   /** Adapter dịch vụ AI và STT (docs/srs/07 mục 9) */
   AI_PROVIDER: z.enum(['mock', 'http']).default('mock'),
+  /** Địa chỉ và khóa của dịch vụ AI thật. Chỉ nằm ở máy chủ, không trả về trình duyệt (FR-ADM-02, NFR-SEC-06). */
+  AI_BASE_URL: z.string().url().optional(),
+  AI_API_KEY: z.string().min(1).optional(),
 });
 
 export type Env = z.infer<typeof envSchema>;

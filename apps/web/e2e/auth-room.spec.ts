@@ -23,7 +23,8 @@ test('đăng nhập, đổi mật khẩu lần đầu, mở phòng 3D rồi đă
   await page.getByRole('button', { name: 'Lưu và tiếp tục' }).click();
 
   await expect(page).toHaveURL(/\/student$/);
-  await expect(page.getByRole('heading', { name: /Xin chào, Sinh viên kiểm thử/ })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Trang chủ' })).toBeVisible();
+  await expect(page.getByText('Sinh viên kiểm thử')).toBeVisible();
 
   // Sinh viên không vào được trang quản trị: giao diện đưa về trang của mình, API trả 403
   const res = await page.request.get('/api/users');

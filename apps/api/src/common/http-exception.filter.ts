@@ -11,8 +11,10 @@ export class HttpExceptionFilter implements ExceptionFilter {
     if (exception instanceof HttpException) {
       const status = exception.getStatus();
       const body = exception.getResponse();
-      if (typeof body === 'object' && body && 'fields' in body) {
-        res.status(status).json(body);
+      // Giữ các trường bổ sung như fields (lỗi từng trường) hay sessionId (phiên đang chạy), bỏ trường error tiếng Anh
+      if (typeof body === 'object' && body && ('fields' in body || 'sessionId' in body)) {
+        const { error: _error, ...rest } = body as Record<string, unknown>;
+        res.status(status).json({ ...rest, statusCode: status });
         return;
       }
       const message =

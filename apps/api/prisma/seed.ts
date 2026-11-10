@@ -1,7 +1,8 @@
 /**
  * Dữ liệu ban đầu theo docs/srs/04 mục 6:
  * - Một quản trị viên đầu tiên, lấy từ SEED_ADMIN_USERNAME và SEED_ADMIN_PASSWORD.
- * - 3 ca mẫu ở trạng thái Nháp, rubric mặc định 6 kỹ năng, tham số hệ thống mặc định.
+ * - 3 ca mẫu, rubric mặc định 6 kỹ năng, tham số hệ thống mặc định.
+ *   Production: ca ở trạng thái Nháp chờ giảng viên duyệt. Dev: ca được xuất bản sẵn để thử phiên thực hành.
  * - Ngoài production: thêm tài khoản thử và một lớp mẫu để phát triển.
  * Chạy lại nhiều lần vẫn an toàn: bản ghi đã có thì giữ nguyên.
  */
@@ -51,6 +52,7 @@ const CASES: {
     profile: {
       clientName: 'Hà Linh',
       clientAge: 20,
+      opening: { text: 'Dạ, em chào anh chị. Em cũng không biết nên bắt đầu từ đâu nữa.', emotion: 'HESITANT' },
       summary: 'Sinh viên năm hai chịu áp lực từ kết quả học tập và kỳ vọng của gia đình.',
       background:
         'Hà Linh là sinh viên năm hai, gia đình ở quê làm nông, là người đầu tiên trong nhà học đại học. Kỳ vừa rồi Linh trượt hai môn và chưa nói với ai.',
@@ -82,6 +84,7 @@ const CASES: {
     profile: {
       clientName: 'Tuấn Kiệt',
       clientAge: 22,
+      opening: { text: 'Chào anh chị. Thật ra em cũng chỉ đến cho vui thôi.', emotion: 'TENSE' },
       summary: 'Thân chủ gặp mâu thuẫn và tổn thương trong một mối quan hệ thân thiết.',
       background: 'Tuấn Kiệt vừa chia tay sau ba năm và thường xuyên cãi nhau với bạn cùng phòng.',
       mainIssue: 'Kiệt thấy bị bỏ rơi và ngày càng thu mình.',
@@ -107,6 +110,7 @@ const CASES: {
     profile: {
       clientName: 'Mai Phương',
       clientAge: 19,
+      opening: { text: 'Em chào anh chị. Em mới lên Hà Nội được hai tháng thôi.', emotion: 'ANXIOUS' },
       summary: 'Tân sinh viên khó thích nghi với môi trường sống và học tập mới.',
       background: 'Mai Phương từ tỉnh lên Hà Nội học đại học, lần đầu xa nhà, chưa có bạn thân.',
       mainIssue: 'Phương thấy lạc lõng và nghĩ đến việc bỏ học.',
@@ -162,7 +166,18 @@ async function main() {
   }
 
   for (const c of CASES) {
-    if (await prisma.case.findFirst({ where: { title: c.title } })) continue;
+    const existing = await prisma.case.findFirst({ where: { title: c.title }, include: { currentVersion: true } });
+    if (existing) {
+      // Môi trường dev: cập nhật hồ sơ của bản chưa xuất bản và xuất bản để thử phiên thực hành
+      if (!production && existing.currentVersion && !existing.currentVersion.publishedAt) {
+        await prisma.caseVersion.update({
+          where: { id: existing.currentVersion.id },
+          data: { profile: c.profile, publishedAt: new Date() },
+        });
+        await prisma.case.update({ where: { id: existing.id }, data: { status: 'PUBLISHED' } });
+      }
+      continue;
+    }
     const created = await prisma.case.create({ data: { title: c.title, ownerId: owner.id, status: 'DRAFT' } });
     const version = await prisma.caseVersion.create({
       data: {
@@ -174,9 +189,14 @@ async function main() {
         skills: c.skills,
         maxDurationMin: c.minutes,
         avatarKey: c.avatarKey,
+        // Nội dung chưa đối chiếu giáo trình (OI-02). Dev xuất bản sẵn để thử; production để giảng viên duyệt.
+        publishedAt: production ? null : new Date(),
       },
     });
-    await prisma.case.update({ where: { id: created.id }, data: { currentVersionId: version.id } });
+    await prisma.case.update({
+      where: { id: created.id },
+      data: { currentVersionId: version.id, status: production ? 'DRAFT' : 'PUBLISHED' },
+    });
   }
 
   console.log(`Seed xong: quản trị viên "${adminUser}"${production ? '' : `, tài khoản thử dùng mật khẩu ${DEV_PASSWORD}`}`);

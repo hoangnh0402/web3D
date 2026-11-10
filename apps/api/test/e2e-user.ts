@@ -14,6 +14,8 @@ try {
 if (process.env.NODE_ENV === 'production') throw new Error('Không chạy script kiểm thử trên production');
 
 export const E2E_USER = { username: 'e2e_sv', password: 'E2eBanDau2026' };
+/** Tài khoản đã đổi mật khẩu, dùng cho kịch bản phiên thực hành */
+export const E2E_PRACTICE = { username: 'e2e_sv2', password: 'E2eThucHanh2026' };
 
 const prisma = new PrismaClient({ adapter: new PrismaPg({ connectionString: process.env.DATABASE_URL! }) });
 
@@ -32,6 +34,24 @@ async function main() {
     create: { ...data, username: E2E_USER.username, fullName: 'Sinh viên kiểm thử', role: 'STUDENT' },
   });
   await prisma.authSession.updateMany({ where: { userId: user.id, revokedAt: null }, data: { revokedAt: new Date() } });
+
+  const practice = {
+    passwordHash: await argon2.hash(E2E_PRACTICE.password, { type: argon2.argon2id }),
+    mustChangePassword: false,
+    status: 'ACTIVE' as const,
+    failedLoginCount: 0,
+    lockedUntil: null,
+  };
+  const p = await prisma.user.upsert({
+    where: { username: E2E_PRACTICE.username },
+    update: practice,
+    create: { ...practice, username: E2E_PRACTICE.username, fullName: 'Sinh viên thực hành', role: 'STUDENT' },
+  });
+  // Kết thúc phiên còn dở từ lần chạy trước để kịch bản bắt đầu được phiên mới
+  await prisma.practiceSession.updateMany({
+    where: { userId: p.id, status: { in: ['IN_PROGRESS', 'ABANDONED'] } },
+    data: { status: 'ENDED', endedAt: new Date() },
+  });
 }
 
 main().finally(() => prisma.$disconnect());

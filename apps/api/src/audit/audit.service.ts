@@ -10,6 +10,33 @@ export const AUDIT = {
   LOGOUT: 'auth.logout',
   PASSWORD_CHANGED: 'auth.password.changed',
   SESSION_ARCHIVED: 'data.session.archived',
+  SESSION_STARTED: 'session.started',
+  SESSION_ENDED: 'session.ended',
+  SESSION_ABANDONED: 'session.abandoned',
+  SAFETY_FLAGGED: 'safety.flagged',
+  /** Truy cập bản ghi không thuộc quyền (docs/srs/08 AT-09) */
+  ACCESS_DENIED: 'access.denied',
+  ASSESSMENT_FAILED: 'assessment.failed',
+  ASSESSMENT_RERUN: 'assessment.rerun',
+  REFLECTION_SUBMITTED: 'reflection.submitted',
+  SUBMISSION_CREATED: 'submission.created',
+  SESSION_DELETED: 'data.session.deleted',
+  ASSIGNMENT_CREATED: 'assignment.created',
+  ASSIGNMENT_STATUS: 'assignment.status',
+  REVIEW_SAVED: 'review.saved',
+  CASE_SAVED: 'case.saved',
+  CASE_PUBLISHED: 'case.published',
+  CASE_STATUS: 'case.status',
+  CLASS_SAVED: 'class.saved',
+  USER_CREATED: 'user.created',
+  USER_UPDATED: 'user.updated',
+  USER_PASSWORD_RESET: 'user.password.reset',
+  SESSION_STATUS: 'data.session.status',
+  SETTINGS_UPDATED: 'settings.updated',
+  /** Xuất báo cáo tổng hợp (FR-LEC-06) */
+  REPORT_EXPORTED: 'report.exported',
+  CLASS_MEMBER_ADDED: 'class.member.added',
+  CLASS_MEMBER_REMOVED: 'class.member.removed',
 } as const;
 
 export interface AuditEntry {

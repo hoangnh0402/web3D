@@ -8,6 +8,9 @@ import { SettingsModule } from '../settings/settings.module';
 import { REDACT } from '../common/log';
 import { RetentionService } from './retention.service';
 import { QueueService } from './queue.service';
+import { SessionLifecycleService } from '../sessions/session-lifecycle.service';
+import { AiGatewayModule } from '../ai-gateway/ai-gateway.module';
+import { AssessmentService } from '../assessment/assessment.service';
 
 /** Worker chạy chung mã nguồn với API nhưng không mở cổng HTTP */
 @Module({
@@ -19,7 +22,8 @@ import { QueueService } from './queue.service';
     PrismaModule,
     SettingsModule,
     AuditModule,
+    AiGatewayModule,
   ],
-  providers: [RetentionService, QueueService],
+  providers: [RetentionService, QueueService, SessionLifecycleService, AssessmentService],
 })
 export class WorkerModule {}

@@ -23,6 +23,10 @@ docker compose -f deploy/compose.yaml --env-file "$ENV_FILE" exec -T postgres \
 mv "$FILE.tmp" "$FILE"
 echo "$(date -Iseconds) Đã sao lưu: $FILE"
 
+# Ghi thời điểm sao lưu để trang Trạng thái hệ thống hiển thị (FR-ADM-03)
+docker compose -f deploy/compose.yaml --env-file "$ENV_FILE" exec -T postgres   psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -q -c   "INSERT INTO system_settings (key, value, created_at, updated_at) VALUES ('backup.lastAt', to_jsonb(to_char(now() AT TIME ZONE 'UTC', 'YYYY-MM-DD\"T\"HH24:MI:SS\"Z\"')), now(), now())
+   ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = now();"
+
 # Chỉ giữ KEEP bản mới nhất
 ls -1t "$BACKUP_DIR"/labfourt-*.sql.gz | tail -n +"$((KEEP + 1))" | while read -r old; do
   rm -f "$old"

@@ -71,7 +71,7 @@ export const RoleShell = ({ roles, nav, children }: { roles: Role[]; nav: NavIte
             <button
               key={href}
               type="button"
-              aria-current={pathname === href ? 'page' : undefined}
+              aria-current={pathname === href || (href !== nav[0]?.href && pathname.startsWith(`${href}/`)) ? 'page' : undefined}
               onClick={() => router.push(href)}
             >
               <Icon size={20} aria-hidden />

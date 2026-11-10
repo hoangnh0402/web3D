@@ -15,7 +15,13 @@ import { HealthModule } from './health/health.module';
 import { PrismaModule } from './prisma/prisma.module';
 import { SettingsModule } from './settings/settings.module';
 import { UsersModule } from './users/users.module';
+import { CasesModule } from './cases/cases.module';
+import { SessionsModule } from './sessions/sessions.module';
 import { REDACT } from './common/log';
+import { QueueModule } from './queue/queue.module';
+import { AssessmentModule } from './assessment/assessment.module';
+import { LecturerModule } from './lecturer/lecturer.module';
+import { AdminModule } from './admin/admin.module';
 
 @Module({
   imports: [
@@ -40,6 +46,12 @@ import { REDACT } from './common/log';
     AiGatewayModule,
     AuthModule,
     UsersModule,
+    CasesModule,
+    QueueModule,
+    SessionsModule,
+    AssessmentModule,
+    LecturerModule,
+    AdminModule,
     HealthModule,
   ],
   providers: [
