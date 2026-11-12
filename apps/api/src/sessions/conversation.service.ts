@@ -1,7 +1,7 @@
 import { ConflictException, Inject, Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import type { MessageDto, TurnInput } from '@lab-fourt/shared';
-import { AI_GATEWAY, type AiGateway, type ClientTurnDone, type TranscriptLine } from '../ai-gateway/ai-gateway.types';
+import { AI_GATEWAY, retryDelay, type AiGateway, type ClientTurnDone, type TranscriptLine } from '../ai-gateway/ai-gateway.types';
 import { AUDIT, AuditService } from '../audit/audit.service';
 import { Prisma } from '../generated/prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
@@ -159,11 +159,12 @@ export class ConversationService {
     const started = Date.now();
     let done: ClientTurnDone | undefined;
     let lastError: unknown;
+    let waitMs = 0;
     for (let attempt = 0; attempt <= AI_LIMITS.retries && !done; attempt++) {
       if (attempt > 0) {
         // Thử lại toàn bộ lượt với cùng requestId, xóa phần chữ đã hiện (docs/srs/07 mục 7)
         this.events.emit(sessionId, { type: 'delta', text: '', reset: true });
-        await new Promise((r) => setTimeout(r, AI_LIMITS.backoffMs * attempt));
+        await new Promise((r) => setTimeout(r, waitMs));
         if (controller.signal.aborted) return;
       }
       try {
@@ -171,6 +172,10 @@ export class ConversationService {
       } catch (err) {
         if (controller.signal.aborted) return;
         lastError = err;
+        // 400, 401 không thử lại; 429 chờ theo Retry-After
+        const delay = retryDelay(err, AI_LIMITS.backoffMs * (attempt + 1));
+        if (delay === null) break;
+        waitMs = delay;
       }
     }
     if (!done) {

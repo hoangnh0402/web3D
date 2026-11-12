@@ -9,6 +9,8 @@ export default defineConfig({
   testDir: './e2e',
   timeout: 90_000,
   fullyParallel: false,
+  // Chạy tuần tự: các tệp kiểm thử dùng chung CSDL, và phòng 3D dựng bằng CPU làm kịch bản chạy song song bị treo
+  workers: 1,
   retries: process.env.CI ? 1 : 0,
   reporter: [['list']],
   globalSetup: './e2e/global-setup.ts',

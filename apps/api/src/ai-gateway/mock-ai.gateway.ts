@@ -23,6 +23,7 @@ const RISK_WORDS = /tự tử|không muốn sống|tự làm hại/i;
 export const MOCK_FAIL_ONCE = '[giả lập lỗi]';
 /** Lần đánh giá đầu tiên của phiên báo lỗi, lần chạy lại thành công (AT-05) */
 export const MOCK_ASSESS_FAIL = '[giả lập lỗi báo cáo]';
+const MOCK_ASSESS_FAIL_ATTEMPTS = 3;
 /** Đánh giá trả một dẫn chứng không có trong hội thoại (AT-11) */
 export const MOCK_FAKE_EVIDENCE = '[giả lập dẫn chứng sai]';
 
@@ -72,14 +73,18 @@ export class MockAiGateway implements AiGateway {
     };
   }
 
-  /** Phiên đã báo lỗi đánh giá giả lập, để lần chạy lại của quản trị viên thành công */
-  private readonly failedAssessments = new Set<string>();
+  /**
+   * Số lần đã báo lỗi đánh giá giả lập theo phiên. Lỗi cả 3 lần thử của lần tạo đầu
+   * (khớp ASSESS_LIMITS.attempts) để báo cáo chuyển Lỗi, lần chạy lại của quản trị viên thành công.
+   */
+  private readonly failedAssessments = new Map<string, number>();
 
   async assess(req: AssessmentRequest): Promise<AssessmentResult> {
     const said = req.transcript.filter((t) => t.speaker === 'STUDENT');
     const all = said.map((t) => t.content).join(' ');
-    if (all.includes(MOCK_ASSESS_FAIL) && !this.failedAssessments.has(req.sessionId)) {
-      this.failedAssessments.add(req.sessionId);
+    const failures = this.failedAssessments.get(req.sessionId) ?? 0;
+    if (all.includes(MOCK_ASSESS_FAIL) && failures < MOCK_ASSESS_FAIL_ATTEMPTS) {
+      this.failedAssessments.set(req.sessionId, failures + 1);
       throw new Error('Giả lập: dịch vụ đánh giá lỗi');
     }
     const quote = (i: number) => {
@@ -132,5 +137,9 @@ export class MockAiGateway implements AiGateway {
 
   async health(): Promise<AiHealth> {
     return { status: 'ok', version: 'mock', model: 'mock' };
+  }
+
+  sttHealth(): Promise<AiHealth> {
+    return this.health();
   }
 }

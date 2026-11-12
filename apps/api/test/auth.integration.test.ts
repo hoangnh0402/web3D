@@ -127,6 +127,6 @@ describe.skipIf(!url)('Xác thực và phân quyền (tích hợp)', () => {
 
   it('kiểm tra sức khỏe không cần đăng nhập', async () => {
     const res = await request(app.getHttpServer()).get('/api/health').expect(200);
-    expect(res.body).toEqual({ status: 'ok', database: 'ok', ai: 'ok' });
+    expect(res.body).toEqual({ status: 'ok', database: 'ok', ai: 'ok', stt: 'ok' });
   });
 });

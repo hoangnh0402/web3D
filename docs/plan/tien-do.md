@@ -1,19 +1,17 @@
 # Tiến độ phát triển Lab FourT
 
-Cập nhật: 10/11/2026. Nhánh: `plan/product-nextjs-nestjs`.
+Cập nhật: 12/11/2026. Nhánh: `main`. Nhiệm vụ 07 đã commit và push lên `origin/main` theo yêu cầu của chủ dự án.
 
 Tệp này ghi lại những gì đã làm và việc tiếp theo, để phiên làm việc sau nắm ngay tình hình. Đọc kèm [AGENTS.md](../../AGENTS.md) (quy tắc) và [COPYRIGHT.md](../../COPYRIGHT.md) (công nghệ, phiên bản).
 
 ## 1. Tình trạng kiểm tra
 
-| Lệnh | Kết quả lần cuối |
+| Lệnh | Kết quả lần cuối (12/11/2026) |
 |---|---|
 | `pnpm lint`, `pnpm typecheck`, `pnpm build` | Qua |
-| `pnpm test` không có CSDL (`TEST_DATABASE_URL=`) | 33 bài qua, các bài tích hợp bị bỏ qua |
-| Kiểm thử tích hợp API với PostgreSQL | **Chưa chạy đủ.** Các bộ của nhiệm vụ 01, 02 đã qua trước đó. Các bộ mới của nhiệm vụ 03 đến 06 chưa từng chạy với CSDL thật |
-| Playwright (`apps/web/e2e`) | **Chưa chạy lại** sau nhiệm vụ 02 |
-
-Lý do: Docker Desktop đã bị tắt nhiều lần vì máy đơ. Việc đầu tiên của phiên sau là chạy đủ các kiểm thử này (mục 4.1).
+| `pnpm test` có PostgreSQL (`TEST_DATABASE_URL`) | Qua: 80 bài API (gồm tích hợp), 4 bài web, 8 bài shared |
+| Playwright (`PLAYWRIGHT_CHANNEL=msedge pnpm e2e`) | Qua 2 kịch bản, chạy tuần tự (`workers: 1`) |
+| Toàn hệ thống bằng `deploy/compose.yaml` | **Chưa chạy.** Agent bị chặn vì được xếp là triển khai; chủ dự án tự chạy khi muốn |
 
 ## 2. Đã làm
 
@@ -47,6 +45,14 @@ Lý do: Docker Desktop đã bị tắt nhiều lần vì máy đơ. Việc đầ
 - Tài khoản (mật khẩu tạm hiện một lần, khóa, vô hiệu hóa, đặt lại mật khẩu, nhập CSV báo lỗi theo dòng), lớp, dữ liệu phiên (khôi phục bắt buộc đặt hạn mới), cấu hình, trạng thái hệ thống và mức dùng AI, nhật ký có lọc và phân trang.
 - Script sao lưu ghi thời điểm vào `system_settings` (`backup.lastAt`).
 
+### Nhiệm vụ 07: Xác minh và adapter dịch vụ thật
+- Sửa bản giả lập lỗi báo cáo: lỗi cả 3 lần thử của lần tạo đầu, nên báo cáo chuyển Lỗi đúng như AT-05.
+- Playwright chạy tuần tự. Hai tệp chạy song song làm phòng 3D dựng bằng CPU chiếm hết máy, kịch bản kia bị treo.
+- Kiểm thử tích hợp mới `data-lifecycle`: AT-10 (giảng viên phụ trách vẫn không mở được phiên luyện tự do), AT-13 (xóa mềm rồi khôi phục), AT-14 (quá hạn thì Đã lưu trữ, dữ liệu còn nguyên).
+- Adapter `AI_PROVIDER=http` theo docs/srs/07: SSE hoặc JSON một lần, đánh giá, STT multipart, `/health`. Phân loại lỗi theo mục 7 (400, 401 không thử lại; 429 chờ `Retry-After`; 408, 5xx, mất kết nối thử lại). Có kiểm thử với máy chủ HTTP giả.
+- `STT_BASE_URL`, `STT_API_KEY` tùy chọn khi STT chạy riêng. Trang trạng thái và `/api/health` có thêm trạng thái STT.
+- Biến môi trường để trống (Compose truyền `AI_BASE_URL=`) được coi như chưa đặt. Trước đây API dừng ngay khi khởi động bằng Compose.
+
 ### Thêm
 - Giảng viên xuất CSV tiến độ bài và thống kê lớp (FR-LEC-06), có ghi nhật ký, chống chèn công thức Excel.
 - Cân đối bố cục toàn bộ prototype demo và đồng bộ CSS sang sản phẩm: hai khối cạnh nhau cao bằng nhau, cột phụ bám theo khi cuộn, trang đăng nhập căn giữa, bảng không xuống dòng lộn xộn. Trang chủ sinh viên của sản phẩm có khối Câu hỏi phản tư.
@@ -58,22 +64,26 @@ Lý do: Docker Desktop đã bị tắt nhiều lần vì máy đơ. Việc đầ
 - Dev seed xuất bản sẵn 3 ca để thử; production để Nháp chờ giảng viên duyệt (OI-02).
 - Thống kê lớp tính theo mức AI đề xuất.
 - Thời gian chờ và số lần thử lại với dịch vụ AI lấy giá trị đề xuất ở docs/srs/07 mục 7 (chờ thống nhất).
+- Adapter `http`: chờ theo `Retry-After` tối đa 30 giây để không vượt thời gian chờ cả lượt. Lỗi 403 xử lý như 401 (sai khóa, không thử lại). Phản hồi sai cấu trúc được thử lại như lỗi dịch vụ.
+- Dịch vụ trả cảm xúc ngoài danh sách thì bỏ qua (nhân vật về trung tính); trả kỹ năng ngoài rubric thì bỏ kỹ năng đó, không làm hỏng cả báo cáo.
+- STT mặc định dùng chung địa chỉ và khóa với AI. Chỉ đặt `STT_BASE_URL`, `STT_API_KEY` khi bên AI tách riêng dịch vụ STT.
+- Trang trạng thái giữ 4 ô như prototype: ô "Dịch vụ AI và STT" báo lỗi khi một trong hai ngừng và ghi rõ dịch vụ nào.
 
 ## 4. Việc tiếp theo
 
-### 4.1. Chạy và sửa kiểm thử (ưu tiên cao nhất)
-1. Bật Docker Desktop, chạy `docker compose -f deploy/compose.dev.yaml up -d --wait`.
-2. `pnpm test` đầy đủ (có `TEST_DATABASE_URL`). Sửa lỗi ở các bộ `assessment`, `lecturer`, `case-authoring`, `admin`.
-3. `pnpm build` rồi `PLAYWRIGHT_CHANNEL=msedge pnpm e2e`. Kịch bản thực hành đã ép chế độ 2D.
-4. Chạy thử toàn hệ thống bằng `deploy/compose.yaml`.
+### 4.1. Chạy thử toàn hệ thống (chủ dự án tự chạy)
+- `docker compose -f deploy/compose.yaml --env-file deploy/.env up -d --build`, rồi đi tay AT-01 qua `https://localhost`.
 
 ### 4.2. Chức năng còn thiếu
-- Adapter AI thật (`AI_PROVIDER=http`): chờ bên AI có điểm cuối, theo hợp đồng docs/srs/07.
+- Nối adapter `http` với dịch vụ AI thật khi bên AI có điểm cuối, chạy một phiên đầu cuối rồi chốt docs/srs/07.
 - Quy trình xử lý sự kiện an toàn và chuyển cho giảng viên (FR-SAFE-04): chờ OI-03.
 - Quản trị viên xuất báo cáo (ma trận phân quyền cho phép, chưa làm).
 - Giảng viên thực hành để thử ca: API đã cho phép, chưa có giao diện.
 
-### 4.3. Tài liệu và hoàn thiện
+### 4.3. Thiết bị thật (cần người làm trên máy chủ và điện thoại)
+- HTTPS nội bộ và micro trên iPad, iPhone, Android (AT-02, AT-03); đo FPS phòng 3D (AT-07, AT-08); ngắt internet (AT-20).
+
+### 4.4. Tài liệu và hoàn thiện
 - Cập nhật docs/srs/06 (frontend là Next.js) và ghi quyết định vào docs/srs/09.
 - Kiểm tra giao diện ở khổ điện thoại và máy tính bảng.
 - Thử tải 50 phiên với k6, thử khôi phục từ bản sao lưu (NFR-BAK-04).
@@ -82,6 +92,9 @@ Lý do: Docker Desktop đã bị tắt nhiều lần vì máy đơ. Việc đầ
 
 - **pnpm:** máy có pnpm 10, không tự chuyển sang 12.18. Dùng `npx -y pnpm@12.18.0 <lệnh>`.
 - **Máy dễ đơ:** không chạy Playwright vẽ 3D (SwiftShader dùng CPU). Kịch bản kiểm thử đặt `localStorage['lf.forceLite']='1'` để ép chế độ 2D. Chỉ bật Docker khi cần.
+- **Playwright chạy tuần tự** (`workers: 1`). Không bỏ dòng này: hai tệp chạy song song thì kịch bản dựng 3D chiếm hết CPU và kịch bản kia treo ở bước chuyển trang.
+- **Kiểm thử tích hợp dùng chung một CSDL** và các tệp chạy song song. Bài nào quét toàn bảng (ví dụ `RetentionService.archiveExpired`) phải chọn mốc thời gian không đụng tới dữ liệu của tệp khác.
+- **Compose:** agent bị chặn chạy `deploy/compose.yaml` (xếp là triển khai). Chủ dự án tự chạy.
 - **Prisma:** `prisma migrate reset` bị chặn khi agent chạy nếu chưa có xác nhận của chủ dự án. Không lách qua.
 - **Ghi tệp:** công cụ ghi tệp tự đổi chuỗi `\uXXXX` thành ký tự thật (gây lỗi lint `no-irregular-whitespace`). Dùng `String.fromCharCode(...)` hoặc `\p{...}`.
 - **Kết nối API:** API đặt `keepAliveTimeout` 65 giây để proxy của Next không báo `ECONNRESET`.

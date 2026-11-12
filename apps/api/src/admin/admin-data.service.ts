@@ -206,9 +206,13 @@ export class AdminDataService {
     } catch {
       database = 'error';
     }
-    const ai = await this.ai.health().then(
-      (h) => h.status,
-      () => 'error' as const,
+    const [ai, stt] = await Promise.all(
+      [this.ai.health(), this.ai.sttHealth()].map((p) =>
+        p.then(
+          (h) => h.status,
+          () => 'error' as const,
+        ),
+      ),
     );
     const since = new Date(Date.now() - 7 * 86_400_000);
     const [pending, failed, openSafetyEvents, backup, usage] = await Promise.all([
@@ -229,7 +233,8 @@ export class AdminDataService {
     return {
       api: 'ok',
       database,
-      ai,
+      ai: ai!,
+      stt: stt!,
       aiProvider: this.env.AI_PROVIDER,
       assessments: { pending, failed },
       openSafetyEvents,

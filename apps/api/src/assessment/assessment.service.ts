@@ -2,7 +2,7 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
 import { SKILL_CODES, skillCodeSchema, type SkillCode } from '@lab-fourt/shared';
-import { AI_GATEWAY, type AiGateway, type AssessmentResult } from '../ai-gateway/ai-gateway.types';
+import { AI_GATEWAY, retryDelay, type AiGateway, type AssessmentResult } from '../ai-gateway/ai-gateway.types';
 import { AUDIT, AuditService } from '../audit/audit.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { verifyEvidence } from './evidence';
@@ -86,7 +86,10 @@ export class AssessmentService {
       } catch (err) {
         lastError = err;
         this.logger.warn({ sessionId, attempt, err: err instanceof Error ? err.message : err }, 'Tạo báo cáo chưa thành công');
-        if (attempt < ASSESS_LIMITS.attempts) await new Promise((r) => setTimeout(r, ASSESS_LIMITS.backoffMs * attempt));
+        // 400, 401 không thử lại; 429 chờ theo Retry-After (docs/srs/07 mục 7)
+        const delay = retryDelay(err, ASSESS_LIMITS.backoffMs * attempt);
+        if (delay === null) break;
+        if (attempt < ASSESS_LIMITS.attempts) await new Promise((r) => setTimeout(r, delay));
       }
     }
 

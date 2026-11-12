@@ -33,7 +33,21 @@ export default function AdminStatusPage() {
           <div className="grid-4">
             <Health label="API" ok />
             <Health label="Cơ sở dữ liệu" ok={s.database === 'ok'} />
-            <Health label="Dịch vụ AI và STT" ok={s.ai === 'ok'} detail={s.aiProvider === 'mock' ? 'Đang dùng dịch vụ giả lập' : undefined} />
+            <Health
+              label="Dịch vụ AI và STT"
+              ok={s.ai === 'ok' && s.stt === 'ok'}
+              detail={
+                s.aiProvider === 'mock'
+                  ? 'Đang dùng dịch vụ giả lập'
+                  : s.ai !== 'ok' && s.stt !== 'ok'
+                    ? 'Cả dịch vụ AI và STT đều không phản hồi'
+                    : s.ai !== 'ok'
+                      ? 'Dịch vụ AI không phản hồi'
+                      : s.stt !== 'ok'
+                        ? 'Dịch vụ STT không phản hồi'
+                        : undefined
+              }
+            />
             <Health
               label="Sao lưu"
               ok={backupAge !== null && backupAge < 26}

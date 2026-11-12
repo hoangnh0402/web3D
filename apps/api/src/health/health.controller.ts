@@ -24,11 +24,15 @@ export class HealthController {
     } catch {
       database = 'error';
     }
-    const ai = await this.ai.health().then(
-      (h) => h.status,
-      () => 'error' as const,
+    const [ai, stt] = await Promise.all(
+      [this.ai.health(), this.ai.sttHealth()].map((p) =>
+        p.then(
+          (h) => h.status,
+          () => 'error' as const,
+        ),
+      ),
     );
-    const body = { status: database === 'ok' ? 'ok' : 'error', database, ai };
+    const body = { status: database === 'ok' ? 'ok' : 'error', database, ai, stt };
     if (database !== 'ok') throw new ServiceUnavailableException(body);
     return body;
   }

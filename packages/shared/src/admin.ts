@@ -130,6 +130,7 @@ export interface SystemStatus {
   api: 'ok';
   database: 'ok' | 'error';
   ai: 'ok' | 'error';
+  stt: 'ok' | 'error';
   aiProvider: 'mock' | 'http';
   assessments: { pending: number; failed: number };
   openSafetyEvents: number;
