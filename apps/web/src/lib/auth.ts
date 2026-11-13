@@ -2,7 +2,16 @@
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { ROLE_HOME, type ChangePasswordInput, type CurrentUser, type LoginInput } from '@lab-fourt/shared';
+import {
+  ROLE_HOME,
+  ROLE_LOGIN,
+  type AuthOptions,
+  type ChangePasswordInput,
+  type CurrentUser,
+  type ForgotPasswordInput,
+  type LoginInput,
+  type RegisterInput,
+} from '@lab-fourt/shared';
 import { api, ApiRequestError } from './api';
 
 export const ME_KEY = ['auth', 'me'] as const;
@@ -38,6 +47,20 @@ export const useLogin = () => {
   });
 };
 
+/** Có mở đăng ký không và số ngày ghi nhớ đăng nhập, để trang đăng nhập hiển thị đúng */
+export const useAuthOptions = () =>
+  useQuery({ queryKey: ['auth', 'options'], queryFn: () => api<AuthOptions>('/auth/options'), staleTime: 60_000 });
+
+/** Tự đăng ký, tài khoản chờ quản trị viên duyệt (D-12) */
+export const useRegister = () =>
+  useMutation({ mutationFn: (input: RegisterInput) => api<{ status: 'PENDING' }>('/auth/register', { method: 'POST', body: input }) });
+
+/** Gửi yêu cầu đặt lại mật khẩu cho quản trị viên */
+export const useForgotPassword = () =>
+  useMutation({
+    mutationFn: (input: ForgotPasswordInput) => api<{ accepted: true }>('/auth/forgot-password', { method: 'POST', body: input }),
+  });
+
 export const useChangePassword = () => {
   const qc = useQueryClient();
   const router = useRouter();
@@ -56,8 +79,10 @@ export const useLogout = () => {
   return useMutation({
     mutationFn: () => api<void>('/auth/logout', { method: 'POST' }),
     onSettled: () => {
+      // Đăng xuất thì về trang đăng nhập của đúng vai trò vừa dùng
+      const role = qc.getQueryData<CurrentUser | null>(ME_KEY)?.role;
       qc.clear();
-      router.replace('/login');
+      router.replace(role ? ROLE_LOGIN[role] : '/login');
     },
   });
 };

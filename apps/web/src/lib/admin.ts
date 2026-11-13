@@ -12,6 +12,7 @@ import type {
   ImportResult,
   IssuedPassword,
   Page,
+  PasswordRequestRow,
   RecordStatusInput,
   SystemSettings,
   SystemStatus,
@@ -39,6 +40,13 @@ export const useUpdateUser = () =>
   useAction(({ id, ...body }: UpdateUserInput & { id: string }) => api<AdminUser>(`/admin/users/${id}`, { method: 'PATCH', body }), ['admin', 'users']);
 export const useResetPassword = () =>
   useAction((id: string) => api<IssuedPassword>(`/admin/users/${id}/reset-password`, { method: 'POST' }), ['admin', 'users']);
+/** Yêu cầu quên mật khẩu đang chờ. Xử lý xong thì tải lại cả danh sách tài khoản. */
+export const usePasswordRequests = () =>
+  useQuery({ queryKey: ['admin', 'users', 'password-requests'], queryFn: () => api<PasswordRequestRow[]>('/admin/password-requests') });
+export const useResolvePasswordRequest = () =>
+  useAction((id: string) => api<IssuedPassword>(`/admin/password-requests/${id}/resolve`, { method: 'POST' }), ['admin', 'users']);
+export const useDismissPasswordRequest = () =>
+  useAction((id: string) => api<void>(`/admin/password-requests/${id}/dismiss`, { method: 'POST' }), ['admin', 'users']);
 export const useImportUsers = () => useAction((csv: string) => api<ImportResult>('/admin/users/import', { method: 'POST', body: { csv } }), ['admin', 'users']);
 
 // ---------- Lớp ----------

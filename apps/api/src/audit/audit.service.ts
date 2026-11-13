@@ -31,6 +31,13 @@ export const AUDIT = {
   USER_CREATED: 'user.created',
   USER_UPDATED: 'user.updated',
   USER_PASSWORD_RESET: 'user.password.reset',
+  /** Tự đăng ký và duyệt đăng ký (D-12) */
+  USER_REGISTERED: 'user.registered',
+  USER_APPROVED: 'user.approved',
+  USER_REJECTED: 'user.rejected',
+  /** Yêu cầu quên mật khẩu gửi quản trị viên (FR-AUTH-04) */
+  PASSWORD_REQUEST_CREATED: 'password.request.created',
+  PASSWORD_REQUEST_DISMISSED: 'password.request.dismissed',
   SESSION_STATUS: 'data.session.status',
   SETTINGS_UPDATED: 'settings.updated',
   /** Xuất báo cáo tổng hợp (FR-LEC-06) */

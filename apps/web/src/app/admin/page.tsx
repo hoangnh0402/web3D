@@ -1,18 +1,52 @@
 'use client';
 
 import { useState } from 'react';
-import { AlertTriangle, KeyRound, Lock, Unlock, Upload, UserPlus } from 'lucide-react';
-import { ROLE_LABELS, ROLES, type AdminUser, type IssuedPassword, type Role } from '@lab-fourt/shared';
+import { AlertTriangle, Check, KeyRound, Lock, Unlock, Upload, UserPlus, X } from 'lucide-react';
+import { ROLE_LABELS, ROLES, type AdminUser, type IssuedPassword, type PasswordRequestRow, type Role } from '@lab-fourt/shared';
 import { Modal } from '@/components/modal';
 import { Field, Notice, PageHead } from '@/components/ui';
 import { ApiRequestError } from '@/lib/api';
 import { useMe } from '@/lib/auth';
-import { useAdminUsers, useCreateUser, useImportUsers, useResetPassword, useUpdateUser } from '@/lib/admin';
+import {
+  useAdminUsers,
+  useCreateUser,
+  useDismissPasswordRequest,
+  useImportUsers,
+  usePasswordRequests,
+  useResetPassword,
+  useResolvePasswordRequest,
+  useUpdateUser,
+} from '@/lib/admin';
 
 const STATUS: Record<AdminUser['status'], { label: string; tone: string }> = {
   ACTIVE: { label: 'Đang hoạt động', tone: 'ok' },
   LOCKED: { label: 'Đã khóa', tone: 'warn' },
   DISABLED: { label: 'Vô hiệu hóa', tone: 'danger' },
+  PENDING: { label: 'Chờ duyệt', tone: 'warn' },
+};
+
+type Confirm =
+  | { kind: 'user'; user: AdminUser; action: 'lock' | 'disable' | 'reset' | 'reject' }
+  | { kind: 'request'; request: PasswordRequestRow; action: 'resolve' | 'dismiss' };
+
+const CONFIRM_TITLE: Record<Confirm['action'], string> = {
+  reset: 'Đặt lại mật khẩu?',
+  lock: 'Khóa tài khoản?',
+  disable: 'Vô hiệu hóa tài khoản?',
+  reject: 'Từ chối đăng ký?',
+  resolve: 'Cấp mật khẩu tạm?',
+  dismiss: 'Bỏ qua yêu cầu?',
+};
+
+const confirmText = (c: Confirm) => {
+  if (c.kind === 'request') {
+    return c.action === 'resolve'
+      ? `${c.request.fullName} sẽ nhận mật khẩu tạm mới và bị đăng xuất khỏi mọi thiết bị. Hãy xác minh đúng người trước khi trao mật khẩu.`
+      : `Yêu cầu của ${c.request.fullName} sẽ được đóng, mật khẩu hiện tại giữ nguyên.`;
+  }
+  if (c.action === 'reset') return `${c.user.fullName} sẽ nhận mật khẩu tạm mới và bị đăng xuất khỏi mọi thiết bị.`;
+  if (c.action === 'reject') return `Tài khoản ${c.user.username} sẽ bị vô hiệu hóa và không đăng nhập được.`;
+  return `${c.user.fullName} sẽ bị đăng xuất ngay và không đăng nhập được. Lịch sử của tài khoản vẫn được giữ.`;
 };
 const fmt = (iso: string | null) => (iso ? new Date(iso).toLocaleString('vi-VN') : 'Chưa đăng nhập');
 const errorText = (e: unknown) => (e instanceof ApiRequestError ? e.message : e ? 'Thao tác chưa thành công, hãy thử lại.' : '');
@@ -61,24 +95,37 @@ export default function AdminUsersPage() {
   const update = useUpdateUser();
   const reset = useResetPassword();
   const importer = useImportUsers();
+  const requests = usePasswordRequests();
+  const resolve = useResolvePasswordRequest();
+  const dismiss = useDismissPasswordRequest();
   const [form, setForm] = useState<{ username: string; fullName: string; role: Role } | null>(null);
   const [csv, setCsv] = useState<string | null>(null);
   const [issued, setIssued] = useState<IssuedPassword[] | null>(null);
-  const [confirm, setConfirm] = useState<{ user: AdminUser; action: 'lock' | 'disable' | 'reset' } | null>(null);
+  const [confirm, setConfirm] = useState<Confirm | null>(null);
   const fields = create.error instanceof ApiRequestError ? create.error.fields : undefined;
+  // Đăng ký chờ duyệt nằm ở khối Chờ xử lý, không lặp lại trong bảng tài khoản
+  const pending = users.data?.filter((u) => u.status === 'PENDING') ?? [];
+  const accounts = users.data?.filter((u) => u.status !== 'PENDING');
+  const actionError = update.error ?? reset.error ?? resolve.error ?? dismiss.error;
 
   const doConfirm = () => {
     if (!confirm) return;
+    const done = { onSettled: () => setConfirm(null) };
+    if (confirm.kind === 'request') {
+      if (confirm.action === 'resolve') resolve.mutate(confirm.request.id, { onSuccess: (r) => setIssued([r]), ...done });
+      else dismiss.mutate(confirm.request.id, done);
+      return;
+    }
     const { user, action } = confirm;
-    if (action === 'reset') reset.mutate(user.id, { onSuccess: (r) => setIssued([r]), onSettled: () => setConfirm(null) });
-    else update.mutate({ id: user.id, status: action === 'lock' ? 'LOCKED' : 'DISABLED' }, { onSettled: () => setConfirm(null) });
+    if (action === 'reset') reset.mutate(user.id, { onSuccess: (r) => setIssued([r]), ...done });
+    else update.mutate({ id: user.id, status: action === 'lock' ? 'LOCKED' : 'DISABLED' }, done);
   };
 
   return (
     <>
       <PageHead
         title="Tài khoản"
-        sub="Hệ thống không có đăng ký công khai. Tài khoản do quản trị viên tạo."
+        sub="Sinh viên tự đăng ký cần quản trị viên duyệt. Tài khoản giảng viên và quản trị viên do quản trị viên tạo."
         actions={
           <>
             <button type="button" className="btn secondary" onClick={() => setCsv('')}>
@@ -92,16 +139,86 @@ export default function AdminUsersPage() {
           </>
         }
       />
+      {actionError && (
+        <Notice tone="danger" icon={AlertTriangle}>
+          {errorText(actionError)}
+        </Notice>
+      )}
+      {(pending.length > 0 || (requests.data?.length ?? 0) > 0) && (
+        <section className="panel flush" aria-labelledby="pending-title">
+          <h2 id="pending-title" style={{ padding: '18px 22px 0' }}>
+            Chờ xử lý
+          </h2>
+          <div className="table-wrap">
+            <table className="t">
+              <thead>
+                <tr>
+                  <th scope="col">Loại</th>
+                  <th scope="col">Họ tên</th>
+                  <th scope="col">Tên đăng nhập</th>
+                  <th scope="col">Ghi chú xác minh</th>
+                  <th scope="col">Gửi lúc</th>
+                  <th scope="col" className="act">
+                    <span className="sr-only">Thao tác</span>
+                  </th>
+                </tr>
+              </thead>
+              <tbody>
+                {pending.map((u) => (
+                  <tr key={u.id}>
+                    <td>
+                      <span className="badge warn">Đăng ký mới</span>
+                    </td>
+                    <td>{u.fullName}</td>
+                    <td>
+                      <code>{u.username}</code>
+                    </td>
+                    <td>{u.registrationNote ?? <span className="muted">Không có</span>}</td>
+                    <td className="num">{fmt(u.createdAt)}</td>
+                    <td className="act">
+                      <button type="button" className="btn primary sm" onClick={() => update.mutate({ id: u.id, status: 'ACTIVE' })}>
+                        <Check size={15} aria-hidden />
+                        Duyệt
+                      </button>
+                      <button type="button" className="btn danger-ghost sm" onClick={() => setConfirm({ kind: 'user', user: u, action: 'reject' })}>
+                        <X size={15} aria-hidden />
+                        Từ chối
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+                {requests.data?.map((r) => (
+                  <tr key={r.id}>
+                    <td>
+                      <span className="badge">Quên mật khẩu</span>
+                    </td>
+                    <td>{r.fullName}</td>
+                    <td>
+                      <code>{r.username}</code>
+                    </td>
+                    <td>{r.note ?? <span className="muted">Không có</span>}</td>
+                    <td className="num">{fmt(r.createdAt)}</td>
+                    <td className="act">
+                      <button type="button" className="btn primary sm" onClick={() => setConfirm({ kind: 'request', request: r, action: 'resolve' })}>
+                        <KeyRound size={15} aria-hidden />
+                        Cấp mật khẩu tạm
+                      </button>
+                      <button type="button" className="btn ghost sm" onClick={() => setConfirm({ kind: 'request', request: r, action: 'dismiss' })}>
+                        Bỏ qua
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
       <div style={{ maxWidth: 360 }}>
         <Field id="user-q" label="Tìm theo tên hoặc tên đăng nhập">
           <input id="user-q" className="input" value={q} onChange={(e) => setQ(e.target.value)} />
         </Field>
       </div>
-      {(update.error || reset.error) && (
-        <Notice tone="danger" icon={AlertTriangle}>
-          {errorText(update.error ?? reset.error)}
-        </Notice>
-      )}
       <section className="panel flush">
         <div className="table-wrap">
           <table className="t">
@@ -118,7 +235,7 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody>
-              {users.data?.map((u) => {
+              {accounts?.map((u) => {
                 const self = u.id === me.data?.id;
                 return (
                   <tr key={u.id}>
@@ -152,13 +269,13 @@ export default function AdminUsersPage() {
                     </td>
                     <td className="num">{fmt(u.lastLoginAt)}</td>
                     <td className="act">
-                      <button type="button" className="btn ghost sm" onClick={() => setConfirm({ user: u, action: 'reset' })}>
+                      <button type="button" className="btn ghost sm" onClick={() => setConfirm({ kind: 'user', user: u, action: 'reset' })}>
                         <KeyRound size={15} aria-hidden />
                         Đặt lại mật khẩu
                       </button>
                       {u.status === 'ACTIVE' && !u.temporarilyLocked ? (
                         !self && (
-                          <button type="button" className="btn ghost sm" onClick={() => setConfirm({ user: u, action: 'lock' })}>
+                          <button type="button" className="btn ghost sm" onClick={() => setConfirm({ kind: 'user', user: u, action: 'lock' })}>
                             <Lock size={15} aria-hidden />
                             Khóa
                           </button>
@@ -170,7 +287,7 @@ export default function AdminUsersPage() {
                         </button>
                       )}
                       {u.status !== 'DISABLED' && !self && (
-                        <button type="button" className="btn danger-ghost sm" onClick={() => setConfirm({ user: u, action: 'disable' })}>
+                        <button type="button" className="btn danger-ghost sm" onClick={() => setConfirm({ kind: 'user', user: u, action: 'disable' })}>
                           Vô hiệu hóa
                         </button>
                       )}
@@ -304,24 +421,20 @@ export default function AdminUsersPage() {
 
       {confirm && (
         <Modal
-          title={confirm.action === 'reset' ? 'Đặt lại mật khẩu?' : confirm.action === 'lock' ? 'Khóa tài khoản?' : 'Vô hiệu hóa tài khoản?'}
+          title={CONFIRM_TITLE[confirm.action]}
           onClose={() => setConfirm(null)}
           footer={
             <>
               <button type="button" className="btn secondary" onClick={() => setConfirm(null)}>
                 Hủy
               </button>
-              <button type="button" className={`btn ${confirm.action === 'reset' ? 'primary' : 'danger'}`} onClick={doConfirm}>
+              <button type="button" className={`btn ${confirm.action === 'reset' || confirm.action === 'resolve' || confirm.action === 'dismiss' ? 'primary' : 'danger'}`} onClick={doConfirm}>
                 Xác nhận
               </button>
             </>
           }
         >
-          <p>
-            {confirm.action === 'reset'
-              ? `${confirm.user.fullName} sẽ nhận mật khẩu tạm mới và bị đăng xuất khỏi mọi thiết bị.`
-              : `${confirm.user.fullName} sẽ bị đăng xuất ngay và không đăng nhập được. Lịch sử của tài khoản vẫn được giữ.`}
-          </p>
+          <p>{confirmText(confirm)}</p>
         </Modal>
       )}
 

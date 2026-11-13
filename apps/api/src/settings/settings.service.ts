@@ -7,6 +7,10 @@ export const DEFAULT_SETTINGS = {
   'auth.maxFailedLogins': 5,
   /** Thời gian khóa tạm, tính bằng phút */
   'auth.lockMinutes': 15,
+  /** Số ngày giữ đăng nhập khi người dùng chọn Ghi nhớ đăng nhập */
+  'auth.rememberDays': 30,
+  /** Cho phép sinh viên tự đăng ký, tài khoản chờ quản trị viên duyệt (D-12) */
+  'auth.registrationEnabled': true as boolean,
   /** Thời hạn lưu phiên trước khi chuyển sang Đã lưu trữ (D-04) */
   'retention.days': 14,
   /** Độ dài phiên mặc định, tính bằng phút */
@@ -21,6 +25,7 @@ export const DEFAULT_SETTINGS = {
 export type SettingKey = keyof typeof DEFAULT_SETTINGS;
 type NumberKey = { [K in SettingKey]: (typeof DEFAULT_SETTINGS)[K] extends number ? K : never }[SettingKey];
 type StringKey = { [K in SettingKey]: (typeof DEFAULT_SETTINGS)[K] extends string ? K : never }[SettingKey];
+type BooleanKey = { [K in SettingKey]: (typeof DEFAULT_SETTINGS)[K] extends boolean ? K : never }[SettingKey];
 
 @Injectable()
 export class SettingsService {
@@ -34,5 +39,10 @@ export class SettingsService {
   async getString(key: StringKey): Promise<string> {
     const row = await this.prisma.systemSetting.findUnique({ where: { key } });
     return typeof row?.value === 'string' ? row.value : DEFAULT_SETTINGS[key];
+  }
+
+  async getBoolean(key: BooleanKey): Promise<boolean> {
+    const row = await this.prisma.systemSetting.findUnique({ where: { key } });
+    return typeof row?.value === 'boolean' ? row.value : DEFAULT_SETTINGS[key];
   }
 }

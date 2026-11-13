@@ -23,6 +23,14 @@ enum UserStatus {
   ACTIVE
   LOCKED
   DISABLED
+  /// Tự đăng ký, chờ quản trị viên duyệt (D-12)
+  PENDING
+}
+
+enum PasswordRequestStatus {
+  OPEN
+  RESOLVED
+  DISMISSED
 }
 
 enum ClassStatus {
@@ -157,23 +165,49 @@ model User {
   /// Khóa tạm do nhập sai nhiều lần (FR-AUTH-06). Khác với status LOCKED do quản trị viên khóa.
   lockedUntil        DateTime?  @map("locked_until") @db.Timestamptz
   lastLoginAt        DateTime?  @map("last_login_at") @db.Timestamptz
+  /// Tài khoản do người dùng tự đăng ký (D-12), không phải quản trị viên tạo
+  selfRegistered     Boolean    @default(false) @map("self_registered")
+  /// Lớp hoặc mã sinh viên người đăng ký ghi để quản trị viên xác minh
+  registrationNote   String?    @map("registration_note")
   createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz
   updatedAt          DateTime   @updatedAt @map("updated_at") @db.Timestamptz
 
-  authSessions      AuthSession[]
-  memberships       ClassMember[]
-  ownedCases        Case[]              @relation("CaseOwner")
-  createdAssignments Assignment[]       @relation("AssignmentCreator")
-  assignmentTargets AssignmentTarget[]
-  practiceSessions  PracticeSession[]   @relation("SessionOwner")
-  deletedSessions   PracticeSession[]   @relation("SessionDeleter")
-  submissions       Submission[]
-  reviewedAssessments Assessment[]
-  handledSafetyEvents SafetyEvent[]
-  auditLogs         AuditLog[]
-  updatedSettings   SystemSetting[]
+  authSessions            AuthSession[]
+  memberships             ClassMember[]
+  ownedCases              Case[]             @relation("CaseOwner")
+  createdAssignments      Assignment[]       @relation("AssignmentCreator")
+  assignmentTargets       AssignmentTarget[]
+  practiceSessions        PracticeSession[]  @relation("SessionOwner")
+  deletedSessions         PracticeSession[]  @relation("SessionDeleter")
+  submissions             Submission[]
+  reviewedAssessments     Assessment[]
+  handledSafetyEvents     SafetyEvent[]
+  auditLogs               AuditLog[]
+  updatedSettings         SystemSetting[]
+  passwordRequests        PasswordRequest[]  @relation("PasswordRequestUser")
+  handledPasswordRequests PasswordRequest[]  @relation("PasswordRequestHandler")
 
   @@map("users")
+}
+
+/// Yêu cầu đặt lại mật khẩu gửi từ trang Quên mật khẩu. Không có email nên quản trị viên xử lý (FR-AUTH-04).
+model PasswordRequest {
+  id          String                @id @default(uuid(7)) @db.Uuid
+  userId      String                @map("user_id") @db.Uuid
+  status      PasswordRequestStatus @default(OPEN)
+  /// Ghi chú của người gửi để quản trị viên xác minh
+  note        String?
+  ip          String?
+  handledById String?               @map("handled_by_id") @db.Uuid
+  handledAt   DateTime?             @map("handled_at") @db.Timestamptz
+  createdAt   DateTime              @default(now()) @map("created_at") @db.Timestamptz
+
+  user      User  @relation("PasswordRequestUser", fields: [userId], references: [id])
+  handledBy User? @relation("PasswordRequestHandler", fields: [handledById], references: [id])
+
+  @@index([status, createdAt])
+  @@index([userId])
+  @@map("password_requests")
 }
 
 model AuthSession {

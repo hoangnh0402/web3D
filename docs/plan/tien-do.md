@@ -1,17 +1,17 @@
 # Tiến độ phát triển Lab FourT
 
-Cập nhật: 12/11/2026. Nhánh: `main`. Nhiệm vụ 07 đã commit và push lên `origin/main` theo yêu cầu của chủ dự án.
+Cập nhật: 13/11/2026. Nhánh: `main`. Nhiệm vụ 07, 08, 09 đã commit và push lên `origin/main`.
 
 Tệp này ghi lại những gì đã làm và việc tiếp theo, để phiên làm việc sau nắm ngay tình hình. Đọc kèm [AGENTS.md](../../AGENTS.md) (quy tắc) và [COPYRIGHT.md](../../COPYRIGHT.md) (công nghệ, phiên bản).
 
 ## 1. Tình trạng kiểm tra
 
-| Lệnh | Kết quả lần cuối (12/11/2026) |
+| Lệnh | Kết quả lần cuối (13/11/2026) |
 |---|---|
 | `pnpm lint`, `pnpm typecheck`, `pnpm build` | Qua |
-| `pnpm test` có PostgreSQL (`TEST_DATABASE_URL`) | Qua: 80 bài API (gồm tích hợp), 4 bài web, 8 bài shared |
+| `pnpm test` có PostgreSQL (`TEST_DATABASE_URL`) | Qua: 89 bài API (gồm tích hợp), 9 bài web, 8 bài shared |
 | Playwright (`PLAYWRIGHT_CHANNEL=msedge pnpm e2e`) | Qua 2 kịch bản, chạy tuần tự (`workers: 1`) |
-| Toàn hệ thống bằng `deploy/compose.yaml` | **Chưa chạy.** Agent bị chặn vì được xếp là triển khai; chủ dự án tự chạy khi muốn |
+| Toàn hệ thống bằng `deploy/compose.yaml` | Đã chạy được ngày 13/11 (bản nhiệm vụ 07). Cần build lại để có nhiệm vụ 08 |
 
 ## 2. Đã làm
 
@@ -53,6 +53,22 @@ Tệp này ghi lại những gì đã làm và việc tiếp theo, để phiên 
 - `STT_BASE_URL`, `STT_API_KEY` tùy chọn khi STT chạy riêng. Trang trạng thái và `/api/health` có thêm trạng thái STT.
 - Biến môi trường để trống (Compose truyền `AI_BASE_URL=`) được coi như chưa đặt. Trước đây API dừng ngay khi khởi động bằng Compose.
 
+### Nhiệm vụ 08: Đăng ký, quên mật khẩu, ghi nhớ đăng nhập (D-12, D-13, D-14)
+- Migration `self_service_auth`: trạng thái tài khoản `PENDING`, cột `self_registered`, `registration_note`, bảng `password_requests`.
+- `/register`: sinh viên tự đăng ký kèm lớp hoặc mã sinh viên, tài khoản Chờ duyệt. Đăng nhập khi chưa duyệt báo rõ đang chờ (chỉ khi mật khẩu đúng).
+- `/forgot-password`: gửi yêu cầu cho quản trị viên, phản hồi như nhau dù tên có tồn tại hay không, mỗi người chỉ có một yêu cầu đang chờ.
+- Trang Tài khoản có khối Chờ xử lý: duyệt hoặc từ chối đăng ký, cấp mật khẩu tạm hoặc bỏ qua yêu cầu. Đặt lại mật khẩu trực tiếp cũng đóng yêu cầu đang chờ.
+- Ô Ghi nhớ đăng nhập. Trang Cấu hình có số ngày ghi nhớ và nút bật tắt đăng ký.
+- Trang đăng nhập riêng cho từng vai trò: `/login` (sinh viên), `/login/giang-vien`, `/login/quan-tri`, có thẻ chuyển vai trò theo kiểu `role-quick` của prototype. Máy chủ từ chối tài khoản khác vai trò (chỉ khi mật khẩu đúng) và trả đường dẫn sang trang đúng. Vào `/admin`, `/lecturer` khi chưa đăng nhập thì tới đúng trang đăng nhập; đăng xuất về trang của vai trò.
+- Kiểm thử tích hợp `self-service-auth` (7 bài), `login-portal` (2 bài), kiểm thử form đăng nhập (3 bài mới).
+
+### Nhiệm vụ 09: Trang chủ công khai dạng tin tức
+- `/` không còn tự chuyển hướng: là trang tin tức công khai (bài nổi bật, lưới bài, khối giới thiệu, chân trang nhắc đây là mô phỏng). `/tin-tuc/<slug>` là trang bài, dựng tĩnh lúc build.
+- 4 bài tiếng Việt trong `apps/web/src/features/blog/posts.ts`: giới thiệu Lab FourT, lắng nghe tích cực, câu hỏi mở và đóng, an toàn và đạo đức. Nội dung chuyên môn chưa được giảng viên rà soát (liên quan OI-02).
+- Ảnh bìa dùng ảnh phòng tham vấn có sẵn; hai hình minh họa vẽ bằng SVG trong trang (`figures.tsx`), không dùng ảnh ngoài.
+- Nút Đăng nhập góc trên bên phải mở 3 vai trò (kiểu `role-quick`); đã đăng nhập thì là nút Vào trang của tôi. CSS riêng ở `apps/web/src/styles/blog.css`.
+- Kiểm thử `PublicHeader.test.tsx` (2 bài). Thiếu favicon (lỗi 404 có từ trước).
+
 ### Thêm
 - Giảng viên xuất CSV tiến độ bài và thống kê lớp (FR-LEC-06), có ghi nhật ký, chống chèn công thức Excel.
 - Cân đối bố cục toàn bộ prototype demo và đồng bộ CSS sang sản phẩm: hai khối cạnh nhau cao bằng nhau, cột phụ bám theo khi cuộn, trang đăng nhập căn giữa, bảng không xuống dòng lộn xộn. Trang chủ sinh viên của sản phẩm có khối Câu hỏi phản tư.
@@ -67,6 +83,9 @@ Tệp này ghi lại những gì đã làm và việc tiếp theo, để phiên 
 - Adapter `http`: chờ theo `Retry-After` tối đa 30 giây để không vượt thời gian chờ cả lượt. Lỗi 403 xử lý như 401 (sai khóa, không thử lại). Phản hồi sai cấu trúc được thử lại như lỗi dịch vụ.
 - Dịch vụ trả cảm xúc ngoài danh sách thì bỏ qua (nhân vật về trung tính); trả kỹ năng ngoài rubric thì bỏ kỹ năng đó, không làm hỏng cả báo cáo.
 - STT mặc định dùng chung địa chỉ và khóa với AI. Chỉ đặt `STT_BASE_URL`, `STT_API_KEY` khi bên AI tách riêng dịch vụ STT.
+- Ghi nhớ đăng nhập: không chọn thì cookie phiên (không có Expires) và phiên máy chủ vẫn hết sau `SESSION_TTL_HOURS`; chọn thì cả cookie và phiên giữ `auth.rememberDays` ngày (1 đến 90).
+- Đăng ký bắt buộc ghi lớp hoặc mã sinh viên. Từ chối đăng ký là chuyển tài khoản sang Vô hiệu hóa, không xóa, để giữ nhật ký. Tên đăng nhập tự đổi thành chữ thường.
+- Giới hạn tần suất: đăng ký và quên mật khẩu 5 lần mỗi 10 phút cho mỗi IP. Bật đăng ký mặc định; quản trị viên tắt ở trang Cấu hình.
 - Trang trạng thái giữ 4 ô như prototype: ô "Dịch vụ AI và STT" báo lỗi khi một trong hai ngừng và ghi rõ dịch vụ nào.
 
 ## 4. Việc tiếp theo

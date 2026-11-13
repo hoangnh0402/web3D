@@ -7,6 +7,7 @@ import {
   type CreateUserInput,
   type ImportResult,
   type IssuedPassword,
+  type PasswordRequestRow,
   type UpdateUserInput,
 } from '@lab-fourt/shared';
 import { AUDIT, AuditService } from '../audit/audit.service';
@@ -34,6 +35,8 @@ const toAdminUser = (u: User): AdminUser => ({
   temporarilyLocked: !!u.lockedUntil && u.lockedUntil > new Date(),
   lastLoginAt: u.lastLoginAt?.toISOString() ?? null,
   createdAt: u.createdAt.toISOString(),
+  selfRegistered: u.selfRegistered,
+  registrationNote: u.registrationNote,
 });
 
 /** Quản lý tài khoản của quản trị viên (FR-USR-01, FR-USR-02, FR-AUTH-02, FR-AUTH-04) */
@@ -88,9 +91,11 @@ export class AdminUsersService {
     });
     if (input.status && input.status !== 'ACTIVE') await this.sessions.revokeAllForUser(userId);
     if (input.role && input.role !== u.role) await this.sessions.revokeAllForUser(userId);
+    // Tài khoản tự đăng ký: chuyển sang Đang hoạt động là duyệt, sang Vô hiệu hóa là từ chối (D-12)
+    const decided = u.status === 'PENDING' && !!input.status;
     await this.audit.record({
       actorId,
-      action: AUDIT.USER_UPDATED,
+      action: decided ? (input.status === 'ACTIVE' ? AUDIT.USER_APPROVED : AUDIT.USER_REJECTED) : AUDIT.USER_UPDATED,
       entityType: 'user',
       entityId: userId,
       before: { fullName: u.fullName, role: u.role, status: u.status },
@@ -109,8 +114,55 @@ export class AdminUsersService {
       data: { passwordHash: await this.passwords.hash(temp), mustChangePassword: true, lockedUntil: null, failedLoginCount: 0 },
     });
     await this.sessions.revokeAllForUser(userId);
+    // Đặt lại mật khẩu thì các yêu cầu quên mật khẩu đang chờ của người này coi như đã xử lý
+    await this.prisma.passwordRequest.updateMany({
+      where: { userId, status: 'OPEN' },
+      data: { status: 'RESOLVED', handledById: actorId, handledAt: new Date() },
+    });
     await this.audit.record({ actorId, action: AUDIT.USER_PASSWORD_RESET, entityType: 'user', entityId: userId });
     return { userId, username: u.username, temporaryPassword: temp };
+  }
+
+  /** Yêu cầu quên mật khẩu đang chờ, cũ nhất trước */
+  async passwordRequests(): Promise<PasswordRequestRow[]> {
+    const rows = await this.prisma.passwordRequest.findMany({
+      where: { status: 'OPEN' },
+      include: { user: { select: { username: true, fullName: true, role: true } } },
+      orderBy: { createdAt: 'asc' },
+      take: 200,
+    });
+    return rows.map((r) => ({
+      id: r.id,
+      userId: r.userId,
+      username: r.user.username,
+      fullName: r.user.fullName,
+      role: r.user.role,
+      note: r.note,
+      createdAt: r.createdAt.toISOString(),
+    }));
+  }
+
+  /** Xử lý yêu cầu: cấp mật khẩu tạm như đặt lại mật khẩu, người dùng phải đổi ở lần đăng nhập sau */
+  async resolvePasswordRequest(actorId: string, requestId: string): Promise<IssuedPassword> {
+    const r = await this.openRequest(requestId);
+    return this.resetPassword(actorId, r.userId);
+  }
+
+  /** Bỏ qua yêu cầu, ví dụ khi không xác minh được người gửi */
+  async dismissPasswordRequest(actorId: string, requestId: string) {
+    await this.openRequest(requestId);
+    await this.prisma.passwordRequest.update({
+      where: { id: requestId },
+      data: { status: 'DISMISSED', handledById: actorId, handledAt: new Date() },
+    });
+    await this.audit.record({ actorId, action: AUDIT.PASSWORD_REQUEST_DISMISSED, entityType: 'password_request', entityId: requestId });
+  }
+
+  private async openRequest(id: string) {
+    const r = await this.prisma.passwordRequest.findUnique({ where: { id } });
+    if (!r) throw new NotFoundException('Không tìm thấy yêu cầu');
+    if (r.status !== 'OPEN') throw new ConflictException('Yêu cầu này đã được xử lý');
+    return r;
   }
 
   /** Nhập CSV, báo lỗi theo từng dòng; dòng hợp lệ vẫn được tạo (FR-USR-02) */

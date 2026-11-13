@@ -7,6 +7,10 @@ export const PASSWORD_MIN_LENGTH = 8;
 export const loginSchema = z.object({
   username: z.string().trim().min(1, 'Vui lòng nhập tên đăng nhập').max(64),
   password: z.string().min(1, 'Vui lòng nhập mật khẩu').max(256),
+  /** Ghi nhớ đăng nhập: phiên giữ theo số ngày ở trang Cấu hình, không thì hết khi đóng trình duyệt */
+  remember: z.boolean().optional(),
+  /** Trang đăng nhập theo vai trò. Có thì máy chủ từ chối tài khoản khác vai trò. */
+  portal: roleSchema.optional(),
 });
 export type LoginInput = z.infer<typeof loginSchema>;
 
@@ -32,6 +36,43 @@ export const changePasswordSchema = z
     message: 'Mật khẩu mới phải khác mật khẩu hiện tại',
   });
 export type ChangePasswordInput = z.infer<typeof changePasswordSchema>;
+
+/** Tên đăng nhập: chữ thường không dấu, số, dấu chấm, gạch dưới, gạch ngang */
+export const usernameSchema = z
+  .string()
+  .trim()
+  .toLowerCase()
+  .min(3, 'Tên đăng nhập cần ít nhất 3 ký tự')
+  .max(64)
+  .regex(/^[a-z0-9._-]+$/, 'Chỉ dùng chữ thường không dấu, số, dấu chấm, gạch dưới hoặc gạch ngang');
+
+/** Tự đăng ký tài khoản sinh viên, chờ quản trị viên duyệt (D-12) */
+export const registerSchema = z
+  .object({
+    fullName: z.string().trim().min(1, 'Vui lòng nhập họ tên').max(120),
+    username: usernameSchema,
+    note: z.string().trim().min(1, 'Ghi lớp hoặc mã sinh viên để quản trị viên xác minh').max(200),
+    password: newPasswordSchema,
+    confirmPassword: z.string(),
+  })
+  .refine((v) => v.password === v.confirmPassword, {
+    path: ['confirmPassword'],
+    message: 'Mật khẩu nhập lại không khớp',
+  });
+export type RegisterInput = z.infer<typeof registerSchema>;
+
+/** Gửi yêu cầu đặt lại mật khẩu cho quản trị viên. Hệ thống chạy local nên không dùng email (FR-AUTH-04). */
+export const forgotPasswordSchema = z.object({
+  username: z.string().trim().toLowerCase().min(1, 'Vui lòng nhập tên đăng nhập').max(64),
+  note: z.string().trim().max(200).optional(),
+});
+export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
+
+/** Tùy chọn công khai cho trang đăng nhập */
+export interface AuthOptions {
+  registrationEnabled: boolean;
+  rememberDays: number;
+}
 
 /** Người dùng đang đăng nhập, trả về từ GET /api/auth/me */
 export const currentUserSchema = z.object({

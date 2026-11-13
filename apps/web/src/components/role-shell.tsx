@@ -3,7 +3,7 @@
 import { useEffect, type ReactNode } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { LogOut, type LucideIcon } from 'lucide-react';
-import { ROLE_HOME, ROLE_LABELS, type Role } from '@lab-fourt/shared';
+import { ROLE_HOME, ROLE_LABELS, ROLE_LOGIN, type Role } from '@lab-fourt/shared';
 import { landingFor, useLogout, useMe } from '@/lib/auth';
 import { BrandMark, Leaves } from './ui';
 
@@ -35,7 +35,7 @@ export const RoleShell = ({ roles, nav, children }: { roles: Role[]; nav: NavIte
 
   useEffect(() => {
     if (me.isPending) return;
-    if (!user) router.replace('/login');
+    if (!user) router.replace(ROLE_LOGIN[roles[0] ?? 'STUDENT']);
     else if (user.mustChangePassword) router.replace('/change-password');
     else if (!roles.includes(user.role)) router.replace(ROLE_HOME[user.role]);
   }, [me.isPending, user, roles, router]);
