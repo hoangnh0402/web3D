@@ -11,8 +11,8 @@ describe('OpenAiAiGateway', () => {
       DATABASE_URL: 'postgresql://test',
       AI_PROVIDER: 'http',
       AI_PROTOCOL: 'openai',
-      PROXY_BASE_URL: 'http://proxy.test/v1',
-      PROXY_API_KEY: 'proxy-test-key',
+      AI_BASE_URL: 'http://proxy.test/v1',
+      AI_API_KEY: 'proxy-test-key',
       AI_MODEL: 'xgeni-router/gpt-6-luna',
     });
     const chunks = ['Xin', ' chào', ' bạn'];

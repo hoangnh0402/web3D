@@ -177,7 +177,7 @@ export class AdminDataService {
         aiConfigured:
           this.env.AI_PROVIDER === 'mock' ||
           this.env.AI_PROVIDER === 'simple' ||
-          (!!(this.env.PROXY_BASE_URL ?? this.env.AI_BASE_URL) && !!(this.env.PROXY_API_KEY ?? this.env.AI_API_KEY)),
+          (!!this.env.AI_BASE_URL && !!this.env.AI_API_KEY),
       },
     };
   }

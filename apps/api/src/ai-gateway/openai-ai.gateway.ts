@@ -33,11 +33,10 @@ export class OpenAiAiGateway implements AiGateway {
   private readonly model: string;
 
   constructor(@Inject(ENV) env: Env, private readonly local: SimpleAiGateway) {
-    // XGENI proxy được ưu tiên; AI_* vẫn được hỗ trợ cho các môi trường cũ.
-    this.base = (env.PROXY_BASE_URL ?? env.AI_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/+$/, '');
-    this.key = env.PROXY_API_KEY ?? env.AI_API_KEY ?? '';
+    this.base = (env.AI_BASE_URL ?? 'https://api.openai.com/v1').replace(/\/+$/, '');
+    this.key = env.AI_API_KEY ?? '';
     this.model = env.AI_MODEL;
-    if (!this.key) throw new Error('AI_PROVIDER=http với AI_PROTOCOL=openai cần PROXY_API_KEY hoặc AI_API_KEY');
+    if (!this.key) throw new Error('AI_PROVIDER=http với AI_PROTOCOL=openai cần AI_API_KEY');
   }
 
   async clientTurn(req: ClientTurnRequest, onDelta?: (text: string) => void, signal?: AbortSignal): Promise<ClientTurnDone> {
