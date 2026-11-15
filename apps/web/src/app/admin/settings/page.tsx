@@ -101,7 +101,14 @@ export default function AdminSettingsPage() {
           <section className="panel stack">
             <h2>Dịch vụ AI và nhận dạng giọng nói</h2>
             <p>
-              Đang dùng: <b style={{ fontWeight: 600 }}>{settings.data.services.aiProvider === 'mock' ? 'dịch vụ giả lập' : 'dịch vụ thật'}</b>.{' '}
+              Đang dùng:{' '}
+              <b style={{ fontWeight: 600 }}>
+                {settings.data.services.aiProvider === 'mock'
+                  ? 'dịch vụ giả lập'
+                  : settings.data.services.aiProvider === 'simple'
+                    ? 'AI local'
+                    : 'dịch vụ thật'}
+              </b>.{' '}
               {settings.data.services.aiConfigured ? 'Đã cấu hình.' : 'Chưa cấu hình địa chỉ hoặc khóa.'}
             </p>
             <Notice tone="neutral" icon={ShieldCheck}>

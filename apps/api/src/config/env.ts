@@ -18,8 +18,11 @@ const envSchema = z
       .transform((v) => v === 'true'),
     LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
     /** Adapter dịch vụ AI và STT (docs/srs/07 mục 9) */
-    AI_PROVIDER: z.enum(['mock', 'http']).default('mock'),
-    /** Địa chỉ và khóa của dịch vụ AI thật. Chỉ nằm ở máy chủ, không trả về trình duyệt (FR-ADM-02, NFR-SEC-06). */
+    AI_PROVIDER: z.enum(['mock', 'simple', 'http']).default('mock'),
+    /** Giao thức của provider http: hợp đồng /v1/client-turns hoặc OpenAI Chat Completions. */
+    AI_PROTOCOL: z.enum(['contract', 'openai']).default('contract'),
+    AI_MODEL: z.string().min(1).default('gpt-4o-mini'),
+    /** Địa chỉ và khóa AI/proxy OpenAI-compatible, chỉ nằm ở máy chủ. */
     AI_BASE_URL: optional(z.string().url()),
     AI_API_KEY: optional(z.string().min(1)),
     /** Dịch vụ STT, nếu chạy ở địa chỉ khác dịch vụ AI. Bỏ trống thì dùng AI_BASE_URL và AI_API_KEY. */
@@ -28,10 +31,8 @@ const envSchema = z
   })
   .superRefine((env, ctx) => {
     if (env.AI_PROVIDER !== 'http') return;
-    if (!env.AI_BASE_URL)
-      ctx.addIssue({ code: 'custom', path: ['AI_BASE_URL'], message: 'Bắt buộc khi AI_PROVIDER=http' });
-    if (!env.AI_API_KEY)
-      ctx.addIssue({ code: 'custom', path: ['AI_API_KEY'], message: 'Bắt buộc khi AI_PROVIDER=http' });
+    if (!env.AI_BASE_URL) ctx.addIssue({ code: 'custom', path: ['AI_BASE_URL'], message: 'Bắt buộc khi AI_PROVIDER=http' });
+    if (!env.AI_API_KEY) ctx.addIssue({ code: 'custom', path: ['AI_API_KEY'], message: 'Bắt buộc khi AI_PROVIDER=http' });
   });
 
 export type Env = z.infer<typeof envSchema>;

@@ -172,7 +172,13 @@ export class AdminDataService {
     for (const r of rows) values[r.key] = r.value;
     return {
       values: values as SystemSettings,
-      services: { aiProvider: this.env.AI_PROVIDER, aiConfigured: this.env.AI_PROVIDER === 'mock' || (!!this.env.AI_BASE_URL && !!this.env.AI_API_KEY) },
+      services: {
+        aiProvider: this.env.AI_PROVIDER,
+        aiConfigured:
+          this.env.AI_PROVIDER === 'mock' ||
+          this.env.AI_PROVIDER === 'simple' ||
+          (!!this.env.AI_BASE_URL && !!this.env.AI_API_KEY),
+      },
     };
   }
 

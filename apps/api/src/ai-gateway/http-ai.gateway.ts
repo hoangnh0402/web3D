@@ -91,10 +91,12 @@ export class HttpAiGateway implements AiGateway {
   private readonly stt: { base: string; key: string };
 
   constructor(@Inject(ENV) env: Env) {
-    if (!env.AI_BASE_URL || !env.AI_API_KEY) throw new Error('AI_PROVIDER=http cần AI_BASE_URL và AI_API_KEY');
+    const baseUrl = env.AI_BASE_URL;
+    const apiKey = env.AI_API_KEY;
+    if (!baseUrl || !apiKey) throw new Error('AI_PROVIDER=http cần AI_BASE_URL/AI_API_KEY');
     const trim = (url: string) => url.replace(/\/+$/, '');
-    this.ai = { base: trim(env.AI_BASE_URL), key: env.AI_API_KEY };
-    this.stt = { base: trim(env.STT_BASE_URL ?? env.AI_BASE_URL), key: env.STT_API_KEY ?? env.AI_API_KEY };
+    this.ai = { base: trim(baseUrl), key: apiKey };
+    this.stt = { base: trim(env.STT_BASE_URL ?? baseUrl), key: env.STT_API_KEY ?? apiKey };
   }
 
   async clientTurn(req: ClientTurnRequest, onDelta?: (text: string) => void, signal?: AbortSignal): Promise<ClientTurnDone> {

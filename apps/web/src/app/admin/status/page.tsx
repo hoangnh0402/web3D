@@ -39,6 +39,8 @@ export default function AdminStatusPage() {
               detail={
                 s.aiProvider === 'mock'
                   ? 'Đang dùng dịch vụ giả lập'
+                  : s.aiProvider === 'simple'
+                    ? 'Đang dùng AI local'
                   : s.ai !== 'ok' && s.stt !== 'ok'
                     ? 'Cả dịch vụ AI và STT đều không phản hồi'
                     : s.ai !== 'ok'

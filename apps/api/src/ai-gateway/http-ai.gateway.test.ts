@@ -162,6 +162,10 @@ describe('HttpAiGateway', () => {
 
   it('chọn http mà thiếu địa chỉ hoặc khóa thì báo lỗi cấu hình ngay lúc khởi động', () => {
     expect(() => loadEnv({ DATABASE_URL: 'x', AI_PROVIDER: 'http' })).toThrow(/AI_BASE_URL.*AI_API_KEY/);
+    expect(loadEnv({ DATABASE_URL: 'x', AI_PROVIDER: 'http', AI_BASE_URL: 'http://proxy.test/v1', AI_API_KEY: 'proxy-key' })).toMatchObject({
+      AI_BASE_URL: 'http://proxy.test/v1',
+      AI_API_KEY: 'proxy-key',
+    });
     // Biến để trống như trong Compose được coi như chưa đặt
     expect(loadEnv({ DATABASE_URL: 'x', AI_PROVIDER: 'mock', AI_BASE_URL: '', STT_API_KEY: '' }).AI_BASE_URL).toBeUndefined();
   });
