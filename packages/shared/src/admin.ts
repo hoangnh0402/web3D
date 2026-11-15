@@ -121,7 +121,7 @@ export const updateSettingsSchema = settingsSchema.partial();
 export interface AdminSettings {
   values: SystemSettings;
   /** Chỉ cho biết đã cấu hình hay chưa. Địa chỉ và khóa bí mật không trả về trình duyệt (FR-ADM-02). */
-  services: { aiProvider: 'mock' | 'http'; aiConfigured: boolean };
+  services: { aiProvider: 'mock' | 'simple' | 'http'; aiConfigured: boolean };
 }
 
 // ---------- Trạng thái hệ thống (FR-ADM-03, FR-ADM-04) ----------
@@ -131,7 +131,7 @@ export interface SystemStatus {
   database: 'ok' | 'error';
   ai: 'ok' | 'error';
   stt: 'ok' | 'error';
-  aiProvider: 'mock' | 'http';
+  aiProvider: 'mock' | 'simple' | 'http';
   assessments: { pending: number; failed: number };
   openSafetyEvents: number;
   lastBackupAt: string | null;

@@ -91,10 +91,12 @@ export class HttpAiGateway implements AiGateway {
   private readonly stt: { base: string; key: string };
 
   constructor(@Inject(ENV) env: Env) {
-    if (!env.AI_BASE_URL || !env.AI_API_KEY) throw new Error('AI_PROVIDER=http cần AI_BASE_URL và AI_API_KEY');
+    const baseUrl = env.PROXY_BASE_URL ?? env.AI_BASE_URL;
+    const apiKey = env.PROXY_API_KEY ?? env.AI_API_KEY;
+    if (!baseUrl || !apiKey) throw new Error('AI_PROVIDER=http cần PROXY_BASE_URL/PROXY_API_KEY hoặc AI_BASE_URL/AI_API_KEY');
     const trim = (url: string) => url.replace(/\/+$/, '');
-    this.ai = { base: trim(env.AI_BASE_URL), key: env.AI_API_KEY };
-    this.stt = { base: trim(env.STT_BASE_URL ?? env.AI_BASE_URL), key: env.STT_API_KEY ?? env.AI_API_KEY };
+    this.ai = { base: trim(baseUrl), key: apiKey };
+    this.stt = { base: trim(env.STT_BASE_URL ?? baseUrl), key: env.STT_API_KEY ?? apiKey };
   }
 
   async clientTurn(req: ClientTurnRequest, onDelta?: (text: string) => void, signal?: AbortSignal): Promise<ClientTurnDone> {
@@ -161,7 +163,7 @@ export class HttpAiGateway implements AiGateway {
     await res.body?.cancel().catch(() => undefined);
     const status = res.status;
     if (status === 401 || status === 403) {
-      this.logger.error({ path, status }, 'Dịch vụ từ chối khóa. Quản trị viên cần kiểm tra AI_API_KEY hoặc STT_API_KEY');
+      this.logger.error({ path, status }, 'Dịch vụ từ chối khóa. Quản trị viên cần kiểm tra PROXY_API_KEY/AI_API_KEY hoặc STT_API_KEY');
       throw new AiServiceError(`Dịch vụ từ chối khóa (${status})`, status, false);
     }
     if (status === 429) {
