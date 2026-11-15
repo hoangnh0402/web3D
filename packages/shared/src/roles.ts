@@ -17,3 +17,10 @@ export const ROLE_HOME: Record<Role, string> = {
   LECTURER: '/lecturer',
   ADMIN: '/admin',
 };
+
+/** Trang đăng nhập riêng của từng vai trò. Sinh viên dùng /login vì là đông người dùng nhất. */
+export const ROLE_LOGIN: Record<Role, string> = {
+  STUDENT: '/login',
+  LECTURER: '/login/giang-vien',
+  ADMIN: '/login/quan-tri',
+};

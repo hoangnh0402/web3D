@@ -261,10 +261,10 @@ table.t .act { text-align: right; white-space: nowrap; }
 .login-form .brand b { color: var(--navy); }
 .login-form .brand small { color: var(--ink-3); }
 .role-quick { display: grid; gap: 8px; }
-.role-quick button { all: unset; box-sizing: border-box; display: flex; gap: 12px; align-items: center; padding: 11px 14px; border-radius: 14px; background: var(--card-3); box-shadow: inset 0 0 0 1.5px var(--line); cursor: pointer; transition: transform .25s var(--spring), box-shadow .25s, background .25s; }
-.role-quick button svg { color: var(--navy); }
-.role-quick button:hover { background: #fff; box-shadow: inset 0 0 0 1.5px var(--navy-700), var(--shadow); transform: translateX(4px); }
-.role-quick button:focus-visible { outline: 2px solid var(--sky); }
+.role-quick :is(button, a) { all: unset; color: var(--ink); box-sizing: border-box; display: flex; gap: 12px; align-items: center; padding: 11px 14px; border-radius: 14px; background: var(--card-3); box-shadow: inset 0 0 0 1.5px var(--line); cursor: pointer; transition: transform .25s var(--spring), box-shadow .25s, background .25s; }
+.role-quick :is(button, a) svg { color: var(--navy); }
+.role-quick :is(button, a):hover { background: #fff; box-shadow: inset 0 0 0 1.5px var(--navy-700), var(--shadow); transform: translateX(4px); }
+.role-quick :is(button, a):focus-visible { outline: 2px solid var(--sky); }
 .role-quick b { font-weight: 600; display: block; font-size: 14.5px; }
 .role-quick span { font-size: 12.5px; color: var(--ink-3); }
 .divider { display: flex; align-items: center; gap: 10px; color: var(--ink-3); font-size: 12.5px; }

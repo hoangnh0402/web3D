@@ -15,6 +15,9 @@
 | D-09 | Bản đầu phục vụ tổng cộng 50 giảng viên và sinh viên. Nhóm sinh viên khởi nghiệp sở hữu và quản lý dự án. | §17 câu 1, 2 |
 | D-10 | Sinh viên linh hoạt: tự chọn ca hoặc làm ca được giao. Ca Áp lực học tập được làm kịch bản trước. | §17 câu 5, comment |
 | D-11 | Đã có người phụ trách IT và đã chốt ngân sách. Tên người và số tiền do đại diện dự án giữ, không ghi trong SRS. | Chốt 30/10/2026 |
+| D-12 | Sinh viên được tự đăng ký tài khoản, kèm lớp hoặc mã sinh viên để xác minh. Tài khoản ở trạng thái Chờ duyệt và chỉ đăng nhập được sau khi Quản trị viên duyệt. Quản trị viên tắt được đăng ký ở trang Cấu hình. Thay FR-AUTH-02 và vế "không tự đăng ký được" của AT-25. Tài khoản giảng viên, quản trị viên vẫn do Quản trị viên tạo. | Chủ dự án, 13/11/2026 |
+| D-13 | Quên mật khẩu: người dùng gửi yêu cầu từ trang đăng nhập, Quản trị viên xác minh rồi cấp mật khẩu tạm. Không dùng email (FR-AUTH-04). | Chủ dự án, 13/11/2026 |
+| D-14 | Có ô Ghi nhớ đăng nhập: chọn thì giữ đăng nhập theo số ngày cấu hình (mặc định 30), không chọn thì đăng nhập mất khi đóng trình duyệt. Ứng dụng không tự lưu mật khẩu; việc đó do trình duyệt làm. | Chủ dự án, 13/11/2026 |
 
 ## 2. Nội dung tài liệu gốc đã bị thay thế
 

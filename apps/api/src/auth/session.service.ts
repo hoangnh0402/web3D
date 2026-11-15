@@ -18,9 +18,10 @@ export class SessionService {
     return this.env.SESSION_TTL_HOURS * 3600_000;
   }
 
-  async create(userId: string, meta: { ip: string | null; userAgent?: string }) {
+  /** ttlMs bỏ trống thì dùng SESSION_TTL_HOURS; Ghi nhớ đăng nhập truyền thời hạn dài hơn */
+  async create(userId: string, meta: { ip: string | null; userAgent?: string }, ttlMs = this.ttlMs) {
     const token = randomBytes(32).toString('base64url');
-    const expiresAt = new Date(Date.now() + this.ttlMs);
+    const expiresAt = new Date(Date.now() + ttlMs);
     await this.prisma.authSession.create({
       data: { userId, tokenHash: sha256(token), expiresAt, ip: meta.ip, userAgent: meta.userAgent?.slice(0, 300) },
     });

@@ -7,7 +7,7 @@ import { Field, Notice, PageHead } from '@/components/ui';
 import { ApiRequestError } from '@/lib/api';
 import { useAdminSettings, useSaveSettings } from '@/lib/admin';
 
-type NumberKey = Exclude<keyof SystemSettings, 'safety.guidance'>;
+type NumberKey = { [K in keyof SystemSettings]: SystemSettings[K] extends number ? K : never }[keyof SystemSettings];
 
 const NUMBERS: { key: NumberKey; label: string; hint: string; min: number; max: number }[] = [
   { key: 'retention.days', label: 'Thời hạn lưu phiên (ngày)', hint: 'Quá hạn thì phiên chuyển sang Đã lưu trữ.', min: 1, max: 365 },
@@ -15,6 +15,7 @@ const NUMBERS: { key: NumberKey; label: string; hint: string; min: number; max: 
   { key: 'session.idleTimeoutMin', label: 'Thời gian không hoạt động (phút)', hint: 'Quá thời gian này phiên chuyển sang Bỏ dở.', min: 5, max: 120 },
   { key: 'auth.maxFailedLogins', label: 'Số lần nhập sai mật khẩu', hint: 'Đạt ngưỡng thì khóa tạm tài khoản.', min: 3, max: 20 },
   { key: 'auth.lockMinutes', label: 'Thời gian khóa tạm (phút)', hint: 'Sau thời gian này người dùng thử lại được.', min: 1, max: 1440 },
+  { key: 'auth.rememberDays', label: 'Ghi nhớ đăng nhập (ngày)', hint: 'Áp dụng khi người dùng chọn Ghi nhớ đăng nhập.', min: 1, max: 90 },
 ];
 
 const SettingsForm = ({ initial }: { initial: AdminSettings }) => {
@@ -40,6 +41,23 @@ const SettingsForm = ({ initial }: { initial: AdminSettings }) => {
             </Field>
           ))}
         </div>
+      </section>
+      <section className="panel stack">
+        <h2>Đăng ký tài khoản</h2>
+        <label className="check">
+          <input
+            id="s-registration"
+            type="checkbox"
+            checked={v['auth.registrationEnabled']}
+            onChange={(e) => setV({ ...v, 'auth.registrationEnabled': e.target.checked })}
+          />
+          <span>
+            Cho phép sinh viên tự đăng ký
+            <span className="small muted" style={{ display: 'block' }}>
+              Tài khoản tự đăng ký ở trạng thái Chờ duyệt, chỉ đăng nhập được sau khi quản trị viên duyệt ở trang Tài khoản.
+            </span>
+          </span>
+        </label>
       </section>
       <section className="panel stack">
         <h2>Hướng dẫn an toàn</h2>

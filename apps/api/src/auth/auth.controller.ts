@@ -2,7 +2,16 @@ import { Body, Controller, Get, HttpCode, Inject, Post, Req, Res } from '@nestjs
 import { Throttle } from '@nestjs/throttler';
 import { ApiTags } from '@nestjs/swagger';
 import type { Request, Response } from 'express';
-import { changePasswordSchema, loginSchema, type ChangePasswordInput, type LoginInput } from '@lab-fourt/shared';
+import {
+  changePasswordSchema,
+  forgotPasswordSchema,
+  loginSchema,
+  registerSchema,
+  type ChangePasswordInput,
+  type ForgotPasswordInput,
+  type LoginInput,
+  type RegisterInput,
+} from '@lab-fourt/shared';
 import { ENV, type Env } from '../config/env';
 import { AllowPendingPasswordChange, CurrentUser, Public } from '../common/decorators';
 import { clientIp, SESSION_COOKIE, type SessionUser } from '../common/request';
@@ -32,8 +41,34 @@ export class AuthController {
     @Res({ passthrough: true }) res: Response,
   ) {
     const { session, user } = await this.auth.login(body, { ip: clientIp(req), userAgent: req.get('user-agent') });
-    res.cookie(SESSION_COOKIE, session.token, this.cookie(session.expiresAt));
+    // Không ghi nhớ thì dùng cookie phiên: đóng trình duyệt là mất đăng nhập
+    res.cookie(SESSION_COOKIE, session.token, this.cookie(session.persistent ? session.expiresAt : undefined));
     return user;
+  }
+
+  /** Trang đăng nhập cần biết có mở đăng ký không và số ngày ghi nhớ */
+  @Public()
+  @Get('options')
+  options() {
+    return this.auth.options();
+  }
+
+  /** Tự đăng ký, chờ duyệt (D-12). Giới hạn 5 lần mỗi 10 phút cho mỗi địa chỉ IP. */
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 600_000 } })
+  @Post('register')
+  @HttpCode(201)
+  register(@Body(new ZodValidationPipe(registerSchema)) body: RegisterInput, @Req() req: Request) {
+    return this.auth.register(body, clientIp(req));
+  }
+
+  /** Quên mật khẩu: gửi yêu cầu cho quản trị viên. Giới hạn 5 lần mỗi 10 phút cho mỗi địa chỉ IP. */
+  @Public()
+  @Throttle({ default: { limit: 5, ttl: 600_000 } })
+  @Post('forgot-password')
+  @HttpCode(202)
+  forgotPassword(@Body(new ZodValidationPipe(forgotPasswordSchema)) body: ForgotPasswordInput, @Req() req: Request) {
+    return this.auth.requestPasswordReset(body, clientIp(req));
   }
 
   @AllowPendingPasswordChange()

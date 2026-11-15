@@ -64,6 +64,25 @@ export class AdminController {
     return this.users.resetPassword(user.id, id);
   }
 
+  // ---------- Yêu cầu quên mật khẩu (FR-AUTH-04) ----------
+
+  @Get('password-requests')
+  passwordRequests() {
+    return this.users.passwordRequests();
+  }
+
+  @Post('password-requests/:id/resolve')
+  @HttpCode(200)
+  resolvePasswordRequest(@Param('id', uuid) id: string, @CurrentUser() user: SessionUser) {
+    return this.users.resolvePasswordRequest(user.id, id);
+  }
+
+  @Post('password-requests/:id/dismiss')
+  @HttpCode(204)
+  async dismissPasswordRequest(@Param('id', uuid) id: string, @CurrentUser() user: SessionUser) {
+    await this.users.dismissPasswordRequest(user.id, id);
+  }
+
   // ---------- Lớp ----------
 
   @Get('classes')

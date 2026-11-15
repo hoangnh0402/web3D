@@ -1,7 +1,7 @@
 import { z } from 'zod';
 import { roleSchema, type Role } from './roles.js';
 
-export type UserStatus = 'ACTIVE' | 'LOCKED' | 'DISABLED';
+export type UserStatus = 'ACTIVE' | 'LOCKED' | 'DISABLED' | 'PENDING';
 export type RecordStatus = 'ACTIVE' | 'ARCHIVED' | 'DELETED';
 
 const username = z
@@ -40,6 +40,21 @@ export interface AdminUser {
   /** Đang bị khóa tạm do nhập sai nhiều lần */
   temporarilyLocked: boolean;
   lastLoginAt: string | null;
+  createdAt: string;
+  /** Tự đăng ký (D-12) */
+  selfRegistered: boolean;
+  /** Lớp hoặc mã sinh viên người đăng ký ghi lại */
+  registrationNote: string | null;
+}
+
+/** Yêu cầu đặt lại mật khẩu đang chờ quản trị viên xử lý */
+export interface PasswordRequestRow {
+  id: string;
+  userId: string;
+  username: string;
+  fullName: string;
+  role: Role;
+  note: string | null;
   createdAt: string;
 }
 
@@ -110,6 +125,8 @@ export interface AdminSessionRow {
 export const settingsSchema = z.object({
   'auth.maxFailedLogins': z.number().int().min(3).max(20),
   'auth.lockMinutes': z.number().int().min(1).max(1440),
+  'auth.rememberDays': z.number().int().min(1).max(90),
+  'auth.registrationEnabled': z.boolean(),
   'retention.days': z.number().int().min(1).max(365),
   'session.defaultDurationMin': z.number().int().min(5).max(90),
   'session.idleTimeoutMin': z.number().int().min(5).max(120),
@@ -190,6 +207,11 @@ export const AUDIT_LABELS: Record<string, string> = {
   'user.created': 'Tạo tài khoản',
   'user.updated': 'Sửa tài khoản',
   'user.password.reset': 'Đặt lại mật khẩu',
+  'user.registered': 'Tự đăng ký',
+  'user.approved': 'Duyệt đăng ký',
+  'user.rejected': 'Từ chối đăng ký',
+  'password.request.created': 'Gửi yêu cầu quên mật khẩu',
+  'password.request.dismissed': 'Bỏ qua yêu cầu quên mật khẩu',
   'settings.updated': 'Đổi cấu hình',
   'report.exported': 'Xuất báo cáo',
 };
