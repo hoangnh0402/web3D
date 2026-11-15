@@ -171,9 +171,14 @@ export const RoomScreen = ({ session, onResync }: { session: SessionDetail; onRe
     onResync,
   );
 
+  // Tin nhắn mới thì cuộn mượt. Chữ AI trả dần về hàng chục lần mỗi giây, mỗi lần lại bắt đầu một hiệu ứng
+  // cuộn mượt mới chồng lên hiệu ứng cũ làm khung hội thoại giật, nên lúc đó cuộn tức thì.
   useEffect(() => {
     logRef.current?.scrollTo({ top: logRef.current.scrollHeight, behavior: 'smooth' });
-  }, [live.messages, live.caption]);
+  }, [live.messages]);
+  useEffect(() => {
+    if (live.caption) logRef.current?.scrollTo({ top: logRef.current.scrollHeight });
+  }, [live.caption]);
 
   const recorder = useRecorder(async (blob) => {
     setTranscribing(true);

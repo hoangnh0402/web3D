@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { Component, useEffect, useState, type ReactNode } from 'react';
+import { Component, memo, useEffect, useState, type ReactNode } from 'react';
 import type { AvatarKey, Emotion } from '@lab-fourt/shared';
 import type { Activity } from './rig';
 
@@ -66,8 +66,12 @@ export const useWebGL2 = () => {
   return ok;
 };
 
-/** Vùng hiển thị phòng tham vấn: 3D khi có thể, ảnh tĩnh khi chọn chế độ nhẹ hoặc 3D lỗi */
-export const RoomStage = ({
+/**
+ * Vùng hiển thị phòng tham vấn: 3D khi có thể, ảnh tĩnh khi chọn chế độ nhẹ hoặc 3D lỗi.
+ * memo: màn hình phiên render lại mỗi giây (đồng hồ), mỗi phím gõ và mỗi đoạn chữ AI trả về.
+ * Phòng 3D chỉ cần cập nhật khi cảm xúc, hoạt động hoặc chế độ xem đổi.
+ */
+export const RoomStage = memo(function RoomStage({
   variant,
   emotion,
   activity = 'idle',
@@ -83,7 +87,7 @@ export const RoomStage = ({
   onLost?: () => void;
   onFps?: (fps: number) => void;
   label?: string;
-}) => {
+}) {
   const still = <RoomStill variant={variant} emotion={emotion} label={label} />;
   if (view === '2D') return still;
   return (
@@ -91,7 +95,7 @@ export const RoomStage = ({
       <Scene variant={variant} emotion={emotion} activity={activity} poster={roomImage(variant, emotion)} onLost={onLost} onFps={onFps} />
     </SceneBoundary>
   );
-};
+});
 
 /** Phòng xem thử: tự chuyển sang ảnh tĩnh khi thiết bị không có WebGL 2 hoặc mất ngữ cảnh đồ họa */
 export const RoomView = ({ variant, emotion }: { variant: AvatarKey; emotion: Emotion }) => {

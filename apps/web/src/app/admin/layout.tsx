@@ -8,9 +8,9 @@ import { RoleShell, type NavItem } from '@/components/role-shell';
 const NAV: NavItem[] = [
   { href: '/admin', label: 'Tài khoản', icon: Users },
   { href: '/admin/classes', label: 'Lớp', icon: School },
-  { href: '/admin/data', label: 'Dữ liệu phiên', icon: Database },
+  { href: '/admin/data', label: 'Dữ liệu phiên', short: 'Dữ liệu', icon: Database },
   { href: '/admin/settings', label: 'Cấu hình', icon: Settings2 },
-  { href: '/admin/status', label: 'Trạng thái hệ thống', icon: Server },
+  { href: '/admin/status', label: 'Trạng thái hệ thống', short: 'Hệ thống', icon: Server },
   { href: '/admin/audit', label: 'Nhật ký', icon: FileClock },
 ];
 

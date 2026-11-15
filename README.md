@@ -37,7 +37,7 @@ pnpm --filter @lab-fourt/shared build
 pnpm db:migrate
 pnpm db:seed
 
-# 5. Chạy API (cổng 4000) và web (cổng 3000)
+# 5. Chạy API (cổng 4000), worker tạo báo cáo và web (cổng 3000)
 pnpm dev
 ```
 
@@ -71,6 +71,15 @@ PLAYWRIGHT_CHANNEL=msedge pnpm e2e   # dùng Edge có sẵn; bỏ biến này th
 ### Gọi API
 
 Mọi yêu cầu thay đổi dữ liệu (POST, PUT, PATCH, DELETE) phải có header `X-Requested-With: lab-fourt` để chống CSRF. Thiếu header thì API trả 403.
+
+## Bản demo một lần bấm (bàn giao cho người không chuyên IT)
+
+Người nhận chỉ cần cài Docker Desktop, giải nén gói và bấm đúp `CHAY-DEMO.bat` (macOS: `bash chay-demo.command`). Script tự kiểm tra Docker và cổng 80, build, nạp dữ liệu mẫu (tài khoản giảng viên, sinh viên, lớp, ca đã xuất bản) rồi mở `http://localhost`. `DUNG-DEMO.bat` tắt, `XOA-DU-LIEU-DEMO.bat` xóa sạch dữ liệu demo.
+
+- Chạy dự án Docker riêng `lab-fourt-demo` với cấu hình `deploy/demo/.env` (tạo từ `deploy/demo/demo.env.template`), không đụng tới bản triển khai ở `deploy/.env`.
+- Thân chủ AI mặc định `AI_PROVIDER=simple`, không cần Internet hay khóa dịch vụ.
+- Tài liệu hướng dẫn và kịch bản quay video: nguồn `docs/ban-giao/huong-dan.html`, in PDF bằng `python deploy/demo/in-tai-lieu.py`.
+- Đóng gói: `python deploy/demo/dong-goi.py` tạo `ban-giao/LabFourT-demo.zip` (bỏ `docs/`, `knowledge_base/`, kèm PDF).
 
 ## Triển khai bằng Docker Compose
 

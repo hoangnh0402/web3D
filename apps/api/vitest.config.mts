@@ -8,6 +8,9 @@ export default defineConfig({
     include: ['src/**/*.test.ts', 'test/**/*.test.ts'],
     globalSetup: ['test/global-setup.ts'],
     fileParallelism: false,
+    // Kiểm thử dựa vào kịch bản của bản giả lập, không phụ thuộc AI_PROVIDER trong apps/api/.env của từng máy.
+    // Bài nào cần adapter thật thì tự đặt lại AI_PROVIDER.
+    env: { AI_PROVIDER: 'mock' },
     testTimeout: 30_000,
     hookTimeout: 60_000,
   },

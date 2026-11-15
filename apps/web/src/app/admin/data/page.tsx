@@ -62,7 +62,11 @@ export default function AdminDataPage() {
           {errorText(rerun.error ?? setStatus.error)}
         </Notice>
       )}
-      <section className="panel flush">
+      <section
+        className="panel flush"
+        aria-busy={rows.isPlaceholderData || undefined}
+        style={{ opacity: rows.isPlaceholderData ? 0.55 : 1, transition: 'opacity .25s var(--ease)' }}
+      >
         <div className="table-wrap">
           <table className="t">
             <thead>

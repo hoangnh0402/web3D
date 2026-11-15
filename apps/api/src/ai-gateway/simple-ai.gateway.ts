@@ -48,7 +48,8 @@ export class SimpleAiGateway implements AiGateway {
     const revealed = new Set(Array.isArray(state.revealed) ? state.revealed.filter((v): v is string => typeof v === 'string') : []);
     const hidden = Array.isArray(profile.hiddenInformation) ? profile.hiddenInformation.map(asRecord) : [];
     const opening = asRecord(profile.opening);
-    const mainIssue = textOf(profile.mainIssue) || 'một chuyện khiến em thấy áp lực';
+    // Bỏ dấu câu cuối của hồ sơ ca vì câu trả lời tự thêm dấu chấm (tránh "thất vọng..")
+    const mainIssue = textOf(profile.mainIssue).replace(/[.!?…\s]+$/u, '') || 'một chuyện khiến em thấy áp lực';
     const risky = RISK_WORDS.test(student);
 
     let text: string;

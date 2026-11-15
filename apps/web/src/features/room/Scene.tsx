@@ -111,6 +111,26 @@ const Environment = () => {
   return null;
 };
 
+// Nhân vật chỉ thở, chớp mắt và đổi tư thế chậm, 30 khung hình/giây là đủ mượt. Vẽ theo tần số màn hình
+// (60 đến 144 Hz) làm GPU chạy hết công suất, quạt kêu, pin tụt và giật cả phần hội thoại bên cạnh.
+// Khi người dùng đang kéo xoay góc nhìn thì vẽ đủ tốc độ màn hình để thao tác không bị khựng.
+const IDLE_FPS = 30;
+const FrameLimiter = ({ interacting }: { interacting: React.RefObject<boolean> }) => {
+  const invalidate = useThree((s) => s.invalidate);
+  useEffect(() => {
+    let id = 0, last = -Infinity;
+    // Trừ 2 ms để màn hình 60 Hz vẽ đều mỗi 2 khung, không lúc 2 lúc 3 vì sai số thời gian
+    const gap = 1000 / IDLE_FPS - 2;
+    const tick = (t: number) => {
+      id = requestAnimationFrame(tick);
+      if (interacting.current || t - last >= gap) { last = t; invalidate(); }
+    };
+    id = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(id);
+  }, [invalidate, interacting]);
+  return null;
+};
+
 export interface SceneProps {
   variant: Variant; emotion: Emotion; activity: Activity; poster?: string; play?: boolean; onLost?: () => void; onFps?: (fps: number) => void;
 }
@@ -136,6 +156,14 @@ const FpsProbe = ({ onFps }: { onFps?: (fps: number) => void }) => {
 export default function Scene({ variant, emotion, activity, poster, onLost, onFps }: SceneProps) {
   const yaw = useRef(0), pitch = useRef(0), range = useRef({ yaw: MAX_YAW, pitch: MAX_PITCH });
   const drag = useRef<{ x: number; y: number; yaw: number; pitch: number } | null>(null);
+  // Đang kéo chuột, chạm hoặc vừa bấm phím mũi tên: vẽ đủ tốc độ cho tới khi máy quay dừng hẳn
+  const interacting = useRef(false);
+  const settle = useRef<number | undefined>(undefined);
+  const nudge = () => {
+    interacting.current = true;
+    window.clearTimeout(settle.current);
+    if (!drag.current) settle.current = window.setTimeout(() => { interacting.current = false; }, 800);
+  };
   const [loaded, setLoaded] = useState({ room: false, cast: false });
   const small = typeof window !== 'undefined' && window.innerWidth < 700;
   const clampYaw = (v: number) => Math.max(-range.current.yaw, Math.min(range.current.yaw, v));
@@ -149,14 +177,15 @@ export default function Scene({ variant, emotion, activity, poster, onLost, onFp
     <div
       className="scene-wrap" style={{ width: '100%', height: '100%' }} tabIndex={0} role="application" data-ready={ready || undefined}
       aria-label="Phòng tham vấn 3D. Dùng phím mũi tên hoặc kéo chuột để xoay góc nhìn."
-      onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); drag.current = { x: e.clientX, y: e.clientY, yaw: yaw.current, pitch: pitch.current }; }}
+      onPointerDown={e => { e.currentTarget.setPointerCapture(e.pointerId); drag.current = { x: e.clientX, y: e.clientY, yaw: yaw.current, pitch: pitch.current }; nudge(); }}
       onPointerMove={e => {
         if (!drag.current) return;
         yaw.current = clampYaw(drag.current.yaw + (e.clientX - drag.current.x) * .0018);
         pitch.current = clampPitch(drag.current.pitch - (e.clientY - drag.current.y) * .0014);
       }}
-      onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}
+      onPointerUp={() => { drag.current = null; nudge(); }} onPointerCancel={() => { drag.current = null; nudge(); }}
       onKeyDown={e => {
+        nudge();
         const m: Record<string, () => void> = {
           ArrowLeft: () => { yaw.current = clampYaw(yaw.current - .05); }, ArrowRight: () => { yaw.current = clampYaw(yaw.current + .05); },
           ArrowUp: () => { pitch.current = clampPitch(pitch.current + .025); }, ArrowDown: () => { pitch.current = clampPitch(pitch.current - .025); },
@@ -165,7 +194,9 @@ export default function Scene({ variant, emotion, activity, poster, onLost, onFp
       }}
     >
       <Canvas
-        dpr={small ? [1, 1.5] : [1, 2]} camera={{ position: CAM, fov: 32, near: .1, far: 30 }}
+        // Màn hình mật độ cao ở 2x phải tô gấp 4 lần số điểm ảnh. 1.5x vẫn nét với ảnh nền và nhân vật này.
+        dpr={small ? [1, 1.25] : [1, 1.5]} camera={{ position: CAM, fov: 32, near: .1, far: 30 }}
+        frameloop="demand"
         gl={{ antialias: true, powerPreference: 'high-performance' }}
         onCreated={({ gl }) => {
           gl.toneMapping = THREE.NeutralToneMapping;
@@ -185,6 +216,7 @@ export default function Scene({ variant, emotion, activity, poster, onLost, onFp
         <Avatar variant={variant} emotion={emotion} activity={activity} onReady={() => setLoaded(l => ({ ...l, cast: true }))} onFail={() => onLost?.()} />
         <CameraRig yawRef={yaw} pitchRef={pitch} range={range} />
         <FpsProbe onFps={onFps} />
+        <FrameLimiter interacting={interacting} />
       </Canvas>
       {!ready && <div className="scene-loading" style={poster ? { backgroundImage: `url(${poster})` } : undefined}><span className="glass">Đang chuẩn bị phòng tham vấn</span></div>}
     </div>

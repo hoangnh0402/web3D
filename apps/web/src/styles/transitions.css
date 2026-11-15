@@ -1,0 +1,21 @@
+/*
+ * Chuyển trang và đổi nội dung bằng View Transitions qua <ViewTransition> của React.
+ * Dùng lại đúng hiệu ứng của prototype (vt-out, vt-in trong prototype.css). Trình duyệt chưa hỗ trợ thì đổi ngay, không lỗi.
+ */
+
+/* Đổi khu vực: trang bài viết, đăng nhập, phòng thực hành, khu vực vai trò (app/template.tsx) */
+::view-transition-old(.area) { animation: vt-out .28s var(--ease) both; }
+::view-transition-new(.area) { animation: vt-in .5s var(--ease) both; }
+
+/* Đổi nội dung tại chỗ: bộ lọc, chọn lớp (components/swap.tsx). Ngắn hơn chuyển trang vì người dùng vẫn ở trang cũ. */
+::view-transition-old(.swap) { animation: vt-out .2s var(--ease) both; }
+::view-transition-new(.swap) { animation: vt-in .38s var(--ease) both; }
+
+/* Lớp phủ của hiệu ứng không được nuốt cú bấm: bấm liên tiếp vẫn tới trang thật */
+::view-transition { pointer-events: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) { animation-duration: 0s !important; animation-delay: 0s !important; }
+}

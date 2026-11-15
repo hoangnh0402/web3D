@@ -1,0 +1,687 @@
+<!doctype html>
+<html lang="vi">
+<head>
+<meta charset="utf-8">
+<title>Lab FourT – Hướng dẫn chạy bản demo và kịch bản quay video</title>
+<!-- Nguồn của HUONG-DAN-DEMO.pdf. In lại bằng: python deploy/demo/in-tai-lieu.py -->
+<style>
+  /* Font Be Vietnam Pro (OFL-1.1) lưu ngay cạnh tài liệu, không tải từ Internet */
+  @font-face { font-family: 'BVP'; font-weight: 400; src: url(fonts/be-vietnam-pro-vietnamese-400-normal.woff2) format('woff2'); unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB; }
+  @font-face { font-family: 'BVP'; font-weight: 400; src: url(fonts/be-vietnam-pro-latin-400-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: 'BVP'; font-weight: 500; src: url(fonts/be-vietnam-pro-vietnamese-500-normal.woff2) format('woff2'); unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB; }
+  @font-face { font-family: 'BVP'; font-weight: 500; src: url(fonts/be-vietnam-pro-latin-500-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: 'BVP'; font-weight: 600; src: url(fonts/be-vietnam-pro-vietnamese-600-normal.woff2) format('woff2'); unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB; }
+  @font-face { font-family: 'BVP'; font-weight: 600; src: url(fonts/be-vietnam-pro-latin-600-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+  @font-face { font-family: 'BVP'; font-weight: 700; src: url(fonts/be-vietnam-pro-vietnamese-700-normal.woff2) format('woff2'); unicode-range: U+0102-0103, U+0110-0111, U+0128-0129, U+0168-0169, U+01A0-01A1, U+01AF-01B0, U+0300-0301, U+0303-0304, U+0308-0309, U+0323, U+0329, U+1EA0-1EF9, U+20AB; }
+  @font-face { font-family: 'BVP'; font-weight: 700; src: url(fonts/be-vietnam-pro-latin-700-normal.woff2) format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+  :root {
+    --navy: #1D4ED8; --navy-950: #0B1B4D; --sky: #3E8FDB; --ink: #16213B; --ink-2: #3C4A66; --ink-3: #6B7792;
+    --line: #DCE5F5; --soft: #EEF4FF; --ok: #0F7A4F; --ok-soft: #E3F6EC; --warn: #8A5A00; --warn-soft: #FFF4DB; --danger: #B42318; --danger-soft: #FDECEA;
+  }
+  @page { size: A4; margin: 16mm 15mm 18mm; }
+  @page :first { margin: 0; }
+  * { box-sizing: border-box; }
+  html { font-family: 'BVP', 'Segoe UI', sans-serif; color: var(--ink); font-size: 10.6pt; line-height: 1.55; }
+  body { margin: 0; }
+  h1, h2, h3, h4 { color: var(--navy-950); line-height: 1.25; margin: 0; }
+  h2 { font-size: 19pt; font-weight: 700; margin: 0 0 4mm; padding-bottom: 2.5mm; border-bottom: 2px solid var(--navy); break-after: avoid; }
+  h3 { font-size: 13pt; font-weight: 700; margin: 6mm 0 2mm; break-after: avoid; }
+  h4 { font-size: 11pt; font-weight: 600; margin: 4mm 0 1.5mm; break-after: avoid; }
+  p { margin: 0 0 2.5mm; }
+  ul, ol { margin: 0 0 3mm; padding-left: 6mm; }
+  li { margin-bottom: 1.2mm; }
+  b, strong { font-weight: 600; color: var(--navy-950); }
+  code, .k { font-family: 'Cascadia Mono', Consolas, monospace; font-size: 9.6pt; background: var(--soft); border: 1px solid var(--line); border-radius: 4px; padding: 0 1.5mm; color: var(--navy-950); white-space: nowrap; }
+  .chapter { break-before: page; }
+  .muted { color: var(--ink-3); }
+  .small { font-size: 9.2pt; }
+
+  /* Bìa */
+  .cover { height: 297mm; padding: 26mm 22mm; display: flex; flex-direction: column; background: linear-gradient(160deg, #0B1B4D 0%, #1D4ED8 62%, #5DB2FF 100%); color: #fff; break-after: page; }
+  .cover .brand { font-weight: 700; letter-spacing: .28em; font-size: 12pt; opacity: .9; }
+  .cover h1 { color: #fff; font-size: 34pt; font-weight: 700; margin: 32mm 0 6mm; line-height: 1.15; }
+  .cover .sub { font-size: 14pt; opacity: .92; max-width: 140mm; }
+  .cover img { margin-top: 14mm; width: 100%; border-radius: 6mm; box-shadow: 0 10mm 24mm rgba(0,0,0,.35); }
+  .cover .meta { margin-top: auto; font-size: 10pt; opacity: .85; display: flex; justify-content: space-between; }
+
+  /* Khối nhấn */
+  .box { border-radius: 3mm; padding: 3mm 4mm; margin: 3mm 0 4mm; border: 1px solid var(--line); background: var(--soft); break-inside: avoid; }
+  .box > :last-child { margin-bottom: 0; }
+  .box .t { font-weight: 700; display: block; margin-bottom: 1mm; color: var(--navy-950); }
+  .box.ok { background: var(--ok-soft); border-color: #B7E4CB; }
+  .box.warn { background: var(--warn-soft); border-color: #F1D79B; }
+  .box.danger { background: var(--danger-soft); border-color: #F4C2BD; }
+
+  /* Các bước đánh số */
+  .steps { counter-reset: s; list-style: none; padding: 0; }
+  .steps > li { counter-increment: s; position: relative; padding-left: 10mm; margin-bottom: 3mm; break-inside: avoid; }
+  .steps > li::before { content: counter(s); position: absolute; left: 0; top: .3mm; width: 6.5mm; height: 6.5mm; border-radius: 50%; background: var(--navy); color: #fff; font-weight: 700; font-size: 9.5pt; display: grid; place-items: center; }
+
+  table { width: 100%; border-collapse: collapse; margin: 2mm 0 4mm; font-size: 9.6pt; }
+  th, td { border: 1px solid var(--line); padding: 1.8mm 2.4mm; text-align: left; vertical-align: top; }
+  th { background: var(--soft); color: var(--navy-950); font-weight: 600; }
+  tr { break-inside: avoid; }
+
+  figure { margin: 3mm 0 4mm; break-inside: avoid; }
+  figure img { width: 100%; display: block; border-radius: 2mm; border: 1px solid var(--line); }
+  figcaption { font-size: 8.8pt; color: var(--ink-3); margin-top: 1.2mm; text-align: center; }
+  figure.narrow { width: 72%; margin-left: auto; margin-right: auto; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 4mm; }
+  .two figure { margin: 0 0 3mm; }
+
+  /* Mục lục */
+  .toc { list-style: none; padding: 0; font-size: 11pt; }
+  .toc li { display: flex; gap: 3mm; padding: 2mm 0; border-bottom: 1px dashed var(--line); }
+  .toc b { min-width: 9mm; color: var(--navy); }
+
+  /* Cảnh quay */
+  .scene { border: 1px solid var(--line); border-radius: 3mm; margin: 0 0 5mm; overflow: hidden; break-inside: avoid; }
+  .scene-head { display: flex; align-items: baseline; gap: 3mm; background: var(--navy-950); color: #fff; padding: 2.2mm 4mm; }
+  .scene-head .n { font-weight: 700; font-size: 10pt; background: #5DB2FF; color: var(--navy-950); border-radius: 2mm; padding: 0 2mm; }
+  .scene-head h4 { color: #fff; margin: 0; font-size: 11.5pt; flex: 1; }
+  .scene-head .time { font-size: 9pt; opacity: .85; white-space: nowrap; }
+  .scene-body { display: grid; grid-template-columns: 1.15fr 1fr; gap: 4mm; padding: 3mm 4mm; }
+  .scene-body.full { grid-template-columns: 1fr; }
+  .scene-body h5 { margin: 0 0 1mm; font-size: 9pt; text-transform: uppercase; letter-spacing: .06em; color: var(--sky); }
+  .scene-body ol, .scene-body ul { font-size: 9.6pt; margin-bottom: 2mm; padding-left: 5mm; }
+  .say { background: #F6F9FF; border-left: 3px solid var(--sky); padding: 2mm 3mm; font-size: 9.6pt; font-style: italic; color: var(--ink-2); margin-bottom: 2mm; border-radius: 0 2mm 2mm 0; }
+  .scene-body figure { margin: 0; }
+  .scene-body figure img { border-radius: 1.5mm; }
+
+  .line-tbl td:first-child { width: 8mm; text-align: center; font-weight: 700; color: var(--navy); }
+  .line-tbl .stu { font-weight: 600; color: var(--navy-950); }
+  .acc td:nth-child(2), .acc td:nth-child(3) { font-family: 'Cascadia Mono', Consolas, monospace; font-weight: 600; color: var(--navy-950); }
+  .kbd { display: inline-block; border: 1px solid #B9C6E0; border-bottom-width: 2px; border-radius: 1.2mm; padding: 0 1.5mm; font-size: 9pt; background: #fff; font-weight: 600; white-space: nowrap; }
+  .file { font-weight: 700; color: var(--navy); white-space: nowrap; }
+</style>
+</head>
+<body>
+
+<!-- ================= BÌA ================= -->
+<section class="cover">
+  <div class="brand">LAB FOURT</div>
+  <h1>Hướng dẫn chạy bản demo<br>và kịch bản quay video</h1>
+  <p class="sub">Dành cho người không chuyên về công nghệ: cài một lần, bấm đúp một tệp là web chạy hoàn chỉnh trên máy của bạn. Kèm kịch bản từng cảnh để quay video giới thiệu sản phẩm.</p>
+  <img src="anh/12-sv-phong-tham-van.jpg" alt="Phòng tham vấn 3D của Lab FourT">
+  <div class="meta"><span>Phòng thực hành tham vấn ảo</span><span>Phiên bản demo · 15/11/2026</span></div>
+</section>
+
+<!-- ================= MỤC LỤC ================= -->
+<section>
+  <h2>Nội dung</h2>
+  <ul class="toc">
+    <li><b>1</b><span>Lab FourT là gì và bạn sẽ làm gì với tài liệu này</span></li>
+    <li><b>2</b><span>Chuẩn bị máy tính (làm một lần duy nhất)</span></li>
+    <li><b>3</b><span>Chạy web bằng một lần bấm đúp</span></li>
+    <li><b>4</b><span>Tắt web, chạy lại và làm sạch dữ liệu</span></li>
+    <li><b>5</b><span>Làm quen nhanh với ba vai trò</span></li>
+    <li><b>6</b><span>Chuẩn bị trước khi quay video</span></li>
+    <li><b>7</b><span>Kịch bản quay video demo, từng cảnh</span></li>
+    <li><b>8</b><span>Khi gặp lỗi</span></li>
+    <li><b>9</b><span>Phụ lục: bảng tài khoản, câu thoại mẫu, dùng trên máy Mac</span></li>
+  </ul>
+
+  <div class="box ok">
+    <span class="t">Tóm tắt trong 30 giây</span>
+    <ol style="margin:0">
+      <li>Cài <b>Docker Desktop</b> (mục 2, chỉ làm một lần).</li>
+      <li>Giải nén tệp <span class="file">LabFourT-demo.zip</span>.</li>
+      <li>Bấm đúp <span class="file">CHAY-DEMO.bat</span>, chờ đến khi cửa sổ báo <b>XONG</b>. Trình duyệt tự mở web.</li>
+      <li>Đăng nhập bằng tài khoản ở mục 3.4 và làm theo kịch bản ở mục 7.</li>
+      <li>Dùng xong, bấm đúp <span class="file">DUNG-DEMO.bat</span> để tắt.</li>
+    </ol>
+  </div>
+</section>
+
+<!-- ================= 1 ================= -->
+<section class="chapter">
+  <h2>1. Lab FourT là gì</h2>
+  <p><b>Lab FourT</b> là website giúp sinh viên ngành tâm lý luyện kỹ năng tham vấn. Sinh viên bước vào một căn phòng 3D, trò chuyện với một <b>thân chủ do AI đóng vai</b> bằng cách gõ chữ hoặc nói qua micro. Thân chủ trả lời bằng chữ trên màn hình và thay đổi tư thế, cảm xúc theo cuộc trò chuyện. Kết thúc phiên, hệ thống tạo <b>báo cáo đánh giá sáu nhóm kỹ năng</b>, mỗi nhận xét đều dẫn lại đúng câu sinh viên đã nói.</p>
+  <p>Web có ba vai trò:</p>
+  <table>
+    <tr><th style="width:24%">Vai trò</th><th>Làm được gì</th></tr>
+    <tr><td><b>Sinh viên</b></td><td>Chọn ca thực hành, trò chuyện với thân chủ AI trong phòng 3D, xem báo cáo, viết phản tư và nộp bài cho giảng viên.</td></tr>
+    <tr><td><b>Giảng viên</b></td><td>Soạn ca mô phỏng, giao bài cho lớp, theo dõi tiến độ, đọc lại hội thoại, chấm và nhận xét bài của sinh viên, xem thống kê kỹ năng của lớp.</td></tr>
+    <tr><td><b>Quản trị viên</b></td><td>Quản lý tài khoản và lớp, quản lý dữ liệu phiên, cấu hình hệ thống, xem trạng thái và nhật ký thao tác.</td></tr>
+  </table>
+  <h3>Bạn sẽ làm gì với tài liệu này</h3>
+  <ul>
+    <li><b>Mục 2 đến 4</b>: đưa web lên chạy trên máy của bạn. Không cần biết lập trình, chỉ cần làm đúng thứ tự.</li>
+    <li><b>Mục 5</b>: đi một vòng để quen giao diện.</li>
+    <li><b>Mục 6 và 7</b>: chuẩn bị và quay video demo theo kịch bản từng cảnh (khoảng 10 đến 12 phút).</li>
+    <li><b>Mục 8</b>: tra cứu khi có gì đó không chạy như mong đợi.</li>
+  </ul>
+  <div class="box">
+    <span class="t">Về thân chủ AI trong bản demo</span>
+    Bản demo dùng chế độ AI chạy ngay trên máy của bạn, <b>không cần Internet và không tốn phí</b>. Thân chủ trả lời theo hồ sơ từng ca và theo cách bạn hỏi (ví dụ hỏi về cảm xúc thì thân chủ mở lòng hơn). Câu trả lời ngắn và có phần lặp lại so với AI thật. Kịch bản ở mục 7 đã chọn sẵn các câu hỏi cho ra câu trả lời đẹp nhất.
+  </div>
+</section>
+
+<!-- ================= 2 ================= -->
+<section class="chapter">
+  <h2>2. Chuẩn bị máy tính (làm một lần)</h2>
+  <h3>2.1 Máy cần có</h3>
+  <table>
+    <tr><th style="width:30%">Yêu cầu</th><th>Chi tiết</th></tr>
+    <tr><td>Hệ điều hành</td><td>Windows 10 hoặc Windows 11, bản 64-bit. (Máy Mac xem phụ lục 9.3.)</td></tr>
+    <tr><td>Bộ nhớ (RAM)</td><td>Tối thiểu 8 GB, nên có 16 GB để quay video mượt.</td></tr>
+    <tr><td>Ổ đĩa trống</td><td>Ít nhất 10 GB.</td></tr>
+    <tr><td>Internet</td><td>Cần ở <b>lần chạy đầu tiên</b> để tải khoảng 1 GB. Những lần sau chạy không cần mạng.</td></tr>
+    <tr><td>Trình duyệt</td><td>Google Chrome hoặc Microsoft Edge bản mới.</td></tr>
+    <tr><td>Quyền trên máy</td><td>Cần quyền quản trị (Administrator) <b>chỉ khi cài Docker Desktop</b>.</td></tr>
+  </table>
+
+  <h3>2.2 Cài Docker Desktop</h3>
+  <p>Docker Desktop là phần mềm miễn phí giúp chạy toàn bộ web trong một "hộp" riêng trên máy, bạn không phải cài từng thứ một.</p>
+  <ol class="steps">
+    <li>Mở trình duyệt, vào trang <code>docker.com/products/docker-desktop</code>, bấm <b>Download for Windows</b>. (Nếu bạn chạy <span class="file">CHAY-DEMO.bat</span> khi chưa cài Docker, trang này cũng tự mở.)</li>
+    <li>Mở tệp vừa tải (tên dạng <i>Docker Desktop Installer.exe</i>). Nếu Windows hỏi "Cho phép ứng dụng thay đổi thiết bị?", bấm <b>Yes</b>.</li>
+    <li>Ở màn hình cấu hình, <b>giữ nguyên các lựa chọn mặc định</b> (có dấu tích "Use WSL 2") rồi bấm <b>OK</b>. Chờ cài xong, bấm <b>Close and restart</b> để khởi động lại máy.</li>
+    <li>Sau khi máy bật lại, Docker Desktop tự mở. Bấm <b>Accept</b> ở điều khoản sử dụng. Nếu được mời đăng nhập hoặc khảo sát, bấm <b>Skip</b>. Không cần tài khoản Docker.</li>
+    <li>Nếu Docker báo cần cập nhật <b>WSL</b>, làm theo hướng dẫn trên màn hình (thường là bấm nút cập nhật hoặc chạy lệnh được gợi ý), rồi mở lại Docker Desktop.</li>
+    <li>Chờ đến khi góc dưới bên trái của Docker Desktop hiện chữ <b>Engine running</b> màu xanh. Vậy là xong.</li>
+  </ol>
+  <div class="box warn">
+    <span class="t">Lưu ý</span>
+    Mỗi lần muốn chạy demo, Docker Desktop cần đang mở (biểu tượng cá voi ở khay đồng hồ). Bạn không cần tự mở: <span class="file">CHAY-DEMO.bat</span> sẽ tự mở Docker Desktop nếu nó đang tắt.
+  </div>
+
+  <h3>2.3 Giải nén gói demo</h3>
+  <ol class="steps">
+    <li>Chép tệp <span class="file">LabFourT-demo.zip</span> vào một thư mục dễ tìm, ví dụ <code>D:\</code> hoặc màn hình Desktop.</li>
+    <li>Bấm chuột phải vào tệp, chọn <b>Extract All…</b> (Giải nén tất cả), rồi bấm <b>Extract</b>.</li>
+    <li>Mở thư mục <b>LabFourT-demo</b> vừa tạo. Bạn sẽ thấy các tệp <span class="file">CHAY-DEMO.bat</span>, <span class="file">DUNG-DEMO.bat</span>, <span class="file">XOA-DU-LIEU-DEMO.bat</span> và tài liệu này.</li>
+  </ol>
+  <div class="box danger">
+    <span class="t">Đừng chạy ngay bên trong tệp zip</span>
+    Nếu bấm đúp vào zip rồi bấm đúp <span class="file">CHAY-DEMO.bat</span> ngay trong đó, Windows chỉ giải nén tạm một tệp và web sẽ không chạy được. Luôn giải nén ra thư mục trước. Nên đặt thư mục ở đường dẫn ngắn, không nằm trong OneDrive.
+  </div>
+</section>
+
+<!-- ================= 3 ================= -->
+<section class="chapter">
+  <h2>3. Chạy web bằng một lần bấm đúp</h2>
+  <h3>3.1 Bấm đúp CHAY-DEMO.bat</h3>
+  <p>Trong thư mục <b>LabFourT-demo</b>, bấm đúp tệp <span class="file">CHAY-DEMO.bat</span>. Một cửa sổ chữ màu đen hiện ra và tự làm 6 bước:</p>
+  <table>
+    <tr><th style="width:9%">Bước</th><th style="width:38%">Màn hình hiện</th><th>Ý nghĩa</th></tr>
+    <tr><td>1/6</td><td>Kiểm tra Docker Desktop</td><td>Mở Docker Desktop nếu đang tắt (có thể chờ 1 đến 2 phút).</td></tr>
+    <tr><td>2/6</td><td>Kiểm tra cổng 80</td><td>Đảm bảo không có chương trình khác chiếm địa chỉ <code>http://localhost</code>.</td></tr>
+    <tr><td>3/6</td><td>Chuẩn bị cấu hình</td><td>Tự tạo cấu hình ở lần đầu. Bạn không phải sửa gì.</td></tr>
+    <tr><td>4/6</td><td>Build và khởi động web</td><td><b>Lâu nhất ở lần đầu: 5 đến 15 phút</b>. Rất nhiều dòng chữ chạy qua là bình thường.</td></tr>
+    <tr><td>5/6</td><td>Chờ web sẵn sàng và nạp dữ liệu demo</td><td>Tạo sẵn tài khoản, lớp học và 3 ca thực hành mẫu.</td></tr>
+    <tr><td>6/6</td><td>Mở web</td><td>Trình duyệt tự mở trang <code>http://localhost</code>.</td></tr>
+  </table>
+  <p>Khi thấy dòng chữ xanh <b>XONG! Web đang chạy tại http://localhost</b> là web đã sẵn sàng. Bấm phím bất kỳ để đóng cửa sổ đen. Web vẫn tiếp tục chạy.</p>
+  <div class="box warn">
+    <span class="t">Nếu Windows hiện "Windows protected your PC" (Windows đã bảo vệ máy tính)</span>
+    Đây là cảnh báo chung cho tệp tải về, không phải virus. Bấm <b>More info</b> (Thông tin thêm) rồi bấm <b>Run anyway</b> (Vẫn chạy). Chỉ cần làm một lần.
+  </div>
+  <div class="box">
+    <span class="t">Những lần sau</span>
+    Chạy lại <span class="file">CHAY-DEMO.bat</span> chỉ mất khoảng 1 phút. Dữ liệu bạn đã tạo (bài giao, phiên thực hành, báo cáo) vẫn còn nguyên.
+  </div>
+
+  <h3>3.2 Mở web</h3>
+  <p>Nếu trình duyệt không tự mở, hãy mở Chrome hoặc Edge và gõ vào thanh địa chỉ: <code>localhost</code> rồi bấm <span class="kbd">Enter</span>. Nên dùng đúng chữ <b>localhost</b>, không dùng địa chỉ IP.</p>
+  <figure class="narrow"><img src="anh/01-trang-chu-blog.jpg" alt=""><figcaption>Trang đầu tiên: trang bài viết công khai, ai cũng xem được</figcaption></figure>
+
+  <h3>3.3 Đăng nhập</h3>
+  <p>Bấm nút <b>Đăng nhập</b> ở góc trên bên phải, chọn vai trò, rồi nhập tên đăng nhập và mật khẩu.</p>
+  <div class="two">
+    <figure><img src="anh/02-chon-vai-tro.jpg" alt=""><figcaption>Chọn vai trò đăng nhập</figcaption></figure>
+    <figure><img src="anh/03-dang-nhap-giang-vien.jpg" alt=""><figcaption>Trang đăng nhập của giảng viên</figcaption></figure>
+  </div>
+
+  <h3>3.4 Tài khoản demo</h3>
+  <table class="acc">
+    <tr><th>Vai trò</th><th>Tên đăng nhập</th><th>Mật khẩu</th><th>Tên hiển thị</th></tr>
+    <tr><td>Sinh viên</td><td>sinhvien1</td><td>LabFourT2026</td><td style="font-family:inherit;font-weight:400">Trần Minh Anh</td></tr>
+    <tr><td>Sinh viên</td><td>sinhvien2</td><td>LabFourT2026</td><td style="font-family:inherit;font-weight:400">Lê Hoàng Nam</td></tr>
+    <tr><td>Giảng viên</td><td>giangvien</td><td>LabFourT2026</td><td style="font-family:inherit;font-weight:400">Nguyễn Thu Trang</td></tr>
+    <tr><td>Quản trị viên</td><td>admin</td><td>LabFourTAdmin2026</td><td style="font-family:inherit;font-weight:400">Quản trị viên</td></tr>
+  </table>
+  <p class="small muted">Mật khẩu phân biệt chữ hoa, chữ thường. Đây là tài khoản của bản demo trên máy bạn, không dùng ở nơi khác.</p>
+</section>
+
+<!-- ================= 4 ================= -->
+<section class="chapter">
+  <h2>4. Tắt web, chạy lại và làm sạch dữ liệu</h2>
+  <table>
+    <tr><th style="width:32%">Bạn muốn</th><th style="width:30%">Bấm đúp tệp</th><th>Kết quả</th></tr>
+    <tr><td>Tắt web khi dùng xong</td><td><span class="file">DUNG-DEMO.bat</span></td><td>Web tắt, máy nhẹ lại. Dữ liệu vẫn được giữ.</td></tr>
+    <tr><td>Chạy lại</td><td><span class="file">CHAY-DEMO.bat</span></td><td>Web lên lại trong khoảng 1 phút, dữ liệu cũ còn nguyên.</td></tr>
+    <tr><td>Xóa sạch để quay lại từ đầu</td><td><span class="file">XOA-DU-LIEU-DEMO.bat</span><br>rồi <span class="file">CHAY-DEMO.bat</span></td><td>Xóa mọi bài giao, phiên, báo cáo đã tạo. Lần chạy tiếp theo có lại dữ liệu mẫu ban đầu.</td></tr>
+  </table>
+  <p>Khi bấm <span class="file">XOA-DU-LIEU-DEMO.bat</span>, cửa sổ sẽ hỏi lại cho chắc chắn. Gõ <code>XOA</code> (chữ in hoa) rồi bấm <span class="kbd">Enter</span>. Bấm <span class="kbd">Enter</span> luôn mà không gõ gì thì thao tác bị hủy.</p>
+  <div class="box ok">
+    <span class="t">Mẹo khi quay video</span>
+    Trước mỗi lần quay, chạy <span class="file">XOA-DU-LIEU-DEMO.bat</span> rồi <span class="file">CHAY-DEMO.bat</span>. Màn hình sẽ sạch, không có bài giao hay phiên cũ của lần quay thử, mọi bước trong kịch bản diễn ra đúng như mô tả.
+  </div>
+  <div class="box">
+    <span class="t">Tắt máy tính mà quên tắt web?</span>
+    Không sao. Lần sau bật máy, chỉ cần chạy lại <span class="file">CHAY-DEMO.bat</span>.
+  </div>
+</section>
+
+<!-- ================= 5 ================= -->
+<section class="chapter">
+  <h2>5. Làm quen nhanh với ba vai trò</h2>
+  <p>Mỗi vai trò có một cột menu bên trái. Bấm vào mục trong menu để chuyển trang. Mục <b>Trang bài viết</b> ở cuối menu đưa bạn về trang công khai. Biểu tượng mũi tên cạnh tên ở góc dưới trái là nút <b>Đăng xuất</b>.</p>
+
+  <h3>5.1 Sinh viên</h3>
+  <div class="two">
+    <figure><img src="anh/08-sv-trang-chu.jpg" alt=""><figcaption>Trang chủ: bài được giao, gợi ý thực hành, phiên đang dở</figcaption></figure>
+    <figure><img src="anh/09-sv-thu-vien-ca.jpg" alt=""><figcaption>Thư viện ca: lọc theo độ khó, kỹ năng, trạng thái</figcaption></figure>
+    <figure><img src="anh/14-sv-hoi-thoai-day-du.jpg" alt=""><figcaption>Phòng tham vấn: thân chủ 3D bên trái, hội thoại bên phải</figcaption></figure>
+    <figure><img src="anh/17-sv-bao-cao.jpg" alt=""><figcaption>Báo cáo sau phiên với dẫn chứng từng kỹ năng</figcaption></figure>
+  </div>
+
+  <h3>5.2 Giảng viên</h3>
+  <div class="two">
+    <figure><img src="anh/04-gv-tong-quan.jpg" alt=""><figcaption>Tổng quan: số liệu nhanh và các bài đã giao</figcaption></figure>
+    <figure><img src="anh/05-gv-ca-mo-phong.jpg" alt=""><figcaption>Ca mô phỏng: danh sách ca, phiên bản, trạng thái duyệt</figcaption></figure>
+    <figure><img src="anh/24-gv-xem-bai-nop.jpg" alt=""><figcaption>Xem bài nộp: hội thoại, đánh giá của AI, ô đánh giá của giảng viên</figcaption></figure>
+    <figure><img src="anh/26-gv-lop-thong-ke.jpg" alt=""><figcaption>Lớp và thống kê: phân bố kỹ năng của lớp</figcaption></figure>
+  </div>
+
+  <h3>5.3 Quản trị viên</h3>
+  <div class="two">
+    <figure><img src="anh/28-qtv-tai-khoan.jpg" alt=""><figcaption>Tài khoản: tạo, nhập từ CSV, khóa, đặt lại mật khẩu</figcaption></figure>
+    <figure><img src="anh/32-qtv-trang-thai.jpg" alt=""><figcaption>Trạng thái hệ thống: dịch vụ AI, cơ sở dữ liệu, sao lưu</figcaption></figure>
+  </div>
+</section>
+
+<!-- ================= 6 ================= -->
+<section class="chapter">
+  <h2>6. Chuẩn bị trước khi quay video</h2>
+  <h3>6.1 Danh sách kiểm tra</h3>
+  <table>
+    <tr><th style="width:6%">✓</th><th>Việc cần làm</th></tr>
+    <tr><td>☐</td><td>Chạy <span class="file">XOA-DU-LIEU-DEMO.bat</span> rồi <span class="file">CHAY-DEMO.bat</span> để có dữ liệu sạch (mục 4).</td></tr>
+    <tr><td>☐</td><td>Cắm sạc laptop, tắt các chương trình nặng khác (game, phần mềm đồ họa).</td></tr>
+    <tr><td>☐</td><td>Bật chế độ <b>Không làm phiền</b> (Do not disturb / Focus) của Windows để thông báo không hiện lên video.</td></tr>
+    <tr><td>☐</td><td>Dùng Chrome hoặc Edge, <b>thu phóng 100%</b> (bấm <span class="kbd">Ctrl</span> + <span class="kbd">0</span>), ẩn thanh dấu trang (<span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">B</span>).</td></tr>
+    <tr><td>☐</td><td>Màn hình nên ở độ phân giải 1920 × 1080. Có thể bấm <span class="kbd">F11</span> để trình duyệt toàn màn hình khi quay.</td></tr>
+    <tr><td>☐</td><td>Mở sẵn Notepad chứa các câu thoại ở phụ lục 9.2 để dán nhanh (hoặc gõ trực tiếp nếu muốn video tự nhiên hơn).</td></tr>
+    <tr><td>☐</td><td>Quay thử một lượt không thu tiếng để quen thao tác, sau đó làm sạch dữ liệu lại trước khi quay thật.</td></tr>
+  </table>
+
+  <h3>6.2 Công cụ quay màn hình (có sẵn trên Windows)</h3>
+  <ul>
+    <li><b>Windows 11:</b> mở <b>Snipping Tool</b> (Công cụ Cắt), chọn biểu tượng máy quay <b>Record</b>, kéo chọn vùng màn hình rồi bấm <b>Start</b>. Bấm nút dừng để kết thúc, sau đó lưu video.</li>
+    <li><b>Windows 10 và 11:</b> dùng <b>Xbox Game Bar</b>. Mở trình duyệt, bấm <span class="kbd">Win</span> + <span class="kbd">Alt</span> + <span class="kbd">R</span> để bắt đầu và bấm lại để dừng. Video nằm trong thư mục <i>Videos\Captures</i>.</li>
+    <li>Muốn dựng video, cắt ghép, thêm nhạc và chữ: dùng <b>Clipchamp</b> có sẵn trên Windows 11.</li>
+  </ul>
+  <div class="box">
+    <span class="t">Thu tiếng lời dẫn</span>
+    Có hai cách: nói trực tiếp khi quay (bật micro trong công cụ quay), hoặc quay hình trước rồi thu lời dẫn sau trong Clipchamp. Cách thứ hai dễ hơn cho người mới vì không phải vừa thao tác vừa nói. Kịch bản ở mục 7 có sẵn lời dẫn gợi ý cho từng cảnh.
+  </div>
+
+  <h3>6.3 Chuyển giữa các vai trò khi quay</h3>
+  <p>Kịch bản đổi vai giảng viên → sinh viên → giảng viên → quản trị viên. Cách đơn giản nhất: <b>Đăng xuất</b> (biểu tượng mũi tên ở góc dưới trái), rồi đăng nhập vai mới. Khi dựng video, bạn có thể cắt bỏ đoạn đăng xuất và đăng nhập cho gọn.</p>
+  <div class="box warn">
+    <span class="t">Không dùng micro trong bản demo</span>
+    Ở bản demo, nút micro chỉ <b>giả lập</b> việc nhận dạng giọng nói: dù bạn nói gì, khung nhập cũng hiện cùng một câu mẫu. Khi quay, hãy <b>gõ hoặc dán</b> câu thoại. Có thể nói trong lời dẫn rằng "sinh viên cũng có thể nói qua micro".
+  </div>
+</section>
+
+<!-- ================= 7 ================= -->
+<section class="chapter">
+  <h2>7. Kịch bản quay video demo</h2>
+  <p>Video kể một câu chuyện trọn vẹn: <b>giảng viên giao bài → sinh viên thực hành với thân chủ AI → nhận báo cáo, phản tư, nộp bài → giảng viên chấm và nhận xét → quản trị viên giám sát hệ thống.</b> Tổng thời lượng khoảng <b>10 đến 12 phút</b>. Các cảnh có ghi "có thể bỏ" dùng khi cần video ngắn hơn (khoảng 6 phút).</p>
+  <table>
+    <tr><th style="width:10%">Phần</th><th>Nội dung</th><th style="width:18%">Thời lượng</th></tr>
+    <tr><td>A</td><td>Mở đầu: trang công khai (cảnh 1)</td><td>0:30</td></tr>
+    <tr><td>B</td><td>Giảng viên chuẩn bị và giao bài (cảnh 2 đến 4)</td><td>2:00</td></tr>
+    <tr><td>C</td><td>Sinh viên thực hành trong phòng 3D (cảnh 5 đến 10)</td><td>4:30</td></tr>
+    <tr><td>D</td><td>Báo cáo, phản tư, nộp bài (cảnh 11 đến 13)</td><td>2:00</td></tr>
+    <tr><td>E</td><td>Giảng viên chấm bài, sinh viên nhận nhận xét (cảnh 14 đến 16)</td><td>2:00</td></tr>
+    <tr><td>F</td><td>Quản trị viên và kết thúc (cảnh 17, 18)</td><td>1:30</td></tr>
+  </table>
+  <p class="small muted">Ký hiệu trong mỗi cảnh: <b>Thao tác</b> là những gì bạn bấm hoặc gõ; <b>Lời dẫn</b> là câu gợi ý để đọc khi quay hoặc thu tiếng sau; ảnh bên phải là màn hình bạn sẽ thấy.</p>
+
+  <h3>Phần A. Mở đầu</h3>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 1</span><h4>Trang công khai của Lab FourT</h4><span class="time">≈ 30 giây</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol><li>Mở <code>localhost</code> (chưa đăng nhập).</li><li>Cuộn chuột chậm xuống để thấy các bài viết, rồi cuộn lại lên đầu.</li><li>Bấm nút <b>Đăng nhập</b> ở góc trên phải để hiện ba lựa chọn vai trò.</li></ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Đây là Lab FourT, phòng thực hành tham vấn ảo dành cho sinh viên tâm lý. Trang công khai chia sẻ bài viết về kỹ năng tham vấn. Người dùng đăng nhập theo ba vai trò: sinh viên, giảng viên và quản trị viên."</div>
+      </div>
+      <figure><img src="anh/02-chon-vai-tro.jpg" alt=""></figure>
+    </div>
+  </div>
+
+  <h3>Phần B. Giảng viên chuẩn bị và giao bài</h3>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 2</span><h4>Giảng viên đăng nhập, xem tổng quan</h4><span class="time">≈ 30 giây</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol><li>Trong menu Đăng nhập, chọn <b>Giảng viên</b>.</li><li>Nhập <code>giangvien</code> / <code>LabFourT2026</code>, bấm <b>Đăng nhập</b>.</li><li>Dừng ở trang <b>Tổng quan</b> 3 đến 4 giây.</li></ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Giảng viên đăng nhập và thấy ngay tổng quan: số sinh viên phụ trách, bài đang mở, bài chờ xem xét và các lớp mình dạy."</div>
+      </div>
+      <figure><img src="anh/04-gv-tong-quan.jpg" alt=""></figure>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 3</span><h4>Thư viện ca mô phỏng</h4><span class="time">≈ 30 giây · có thể bỏ</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol><li>Bấm <b>Ca mô phỏng</b> trong menu.</li><li>Rê chuột qua ba ca: Áp lực học tập, Khó khăn trong mối quan hệ, Thích nghi với thay đổi.</li></ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Mỗi ca là một thân chủ với hồ sơ, bối cảnh và những điều chỉ chia sẻ khi được lắng nghe. Giảng viên có thể soạn ca mới, quản lý phiên bản và chờ thẩm định nội dung trước khi xuất bản cho sinh viên."</div>
+      </div>
+      <figure><img src="anh/05-gv-ca-mo-phong.jpg" alt=""></figure>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 4</span><h4>Giao bài cho lớp</h4><span class="time">≈ 60 giây</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol>
+          <li>Bấm <b>Giao bài</b> trong menu.</li>
+          <li>Ô <b>Ca mô phỏng</b>: chọn <i>Áp lực học tập (thân chủ Hà Linh)</i>.</li>
+          <li>Ô <b>Tên bài</b>: gõ <code>Bài 1: Lắng nghe thân chủ Hà Linh</code>.</li>
+          <li>Ô <b>Hạn hoàn thành</b>: bấm biểu tượng lịch, chọn một ngày sau hôm nay vài ngày.</li>
+          <li>Ở <b>Giao cho lớp</b>: tích ô <i>Tham vấn K68</i>.</li>
+          <li>Bấm nút xanh <b>Giao bài</b>. Trang chuyển sang tiến độ của bài vừa giao, hai sinh viên đều ở trạng thái <i>Chưa bắt đầu</i>.</li>
+        </ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Giảng viên giao bài cho cả lớp chỉ trong vài giây: chọn ca, đặt tên, đặt hạn. Sinh viên nộp sau hạn vẫn được, nhưng bài sẽ được đánh dấu trễ."</div>
+      </div>
+      <figure><img src="anh/06-gv-giao-bai.jpg" alt=""></figure>
+    </div>
+  </div>
+
+  <h3>Phần C. Sinh viên thực hành trong phòng 3D</h3>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 5</span><h4>Sinh viên đăng nhập, thấy bài được giao</h4><span class="time">≈ 30 giây</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol><li>Đăng xuất giảng viên (biểu tượng mũi tên ở góc dưới trái).</li><li>Đăng nhập vai <b>Sinh viên</b>: <code>sinhvien1</code> / <code>LabFourT2026</code>.</li><li>Trang chủ hiện khối <b>Bài được giao</b> vừa tạo.</li></ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Ở phía sinh viên, bài giảng viên vừa giao xuất hiện ngay trên trang chủ, kèm hạn hoàn thành và gợi ý thực hành."</div>
+      </div>
+      <figure><img src="anh/08-sv-trang-chu.jpg" alt=""></figure>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 6</span><h4>Thư viện ca và bộ lọc</h4><span class="time">≈ 20 giây · có thể bỏ</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol><li>Bấm <b>Thư viện ca</b>.</li><li>Bấm lần lượt các nút lọc <b>Cơ bản</b>, <b>Trung bình</b> để thấy danh sách đổi mượt, rồi bấm lại <b>Mọi độ khó</b>.</li><li>Bấm <b>Trang chủ</b> để quay về.</li></ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Ngoài bài được giao, sinh viên có thể tự luyện bất cứ ca nào trong thư viện, lọc theo độ khó, kỹ năng và trạng thái."</div>
+      </div>
+      <figure><img src="anh/09-sv-thu-vien-ca.jpg" alt=""></figure>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 7</span><h4>Chuẩn bị ca và quy tắc mô phỏng</h4><span class="time">≈ 40 giây</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol><li>Ở khối Bài được giao, bấm <b>Bắt đầu thực hành</b>.</li><li>Cuộn chậm qua <i>Bối cảnh</i>, <i>Mục tiêu học tập</i> và khung <i>Trước khi bắt đầu</i>.</li><li>Tích ô <b>Tôi đã đọc và hiểu quy tắc mô phỏng</b>.</li><li>Bấm <b>Bắt đầu phiên</b>.</li></ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Trước mỗi phiên, sinh viên đọc bối cảnh của thân chủ, mục tiêu học tập và quy tắc mô phỏng. Đây là môi trường an toàn để tập, AI chỉ đóng vai thân chủ."</div>
+      </div>
+      <figure><img src="anh/10-sv-chuan-bi-ca.jpg" alt=""></figure>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 8</span><h4>Bước vào phòng tham vấn 3D</h4><span class="time">≈ 40 giây</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol><li>Lần đầu vào phòng sẽ có khung <i>Làm quen với phòng tham vấn</i>. Dừng 2 giây cho người xem đọc, rồi bấm <b>Bắt đầu trò chuyện</b>.</li><li>Chờ thân chủ Hà Linh hiện ra và nói câu mở đầu.</li><li>Nhấn giữ chuột trái trên căn phòng và kéo nhẹ sang trái, sang phải để xoay góc nhìn.</li></ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Sinh viên bước vào một căn phòng tham vấn 3D. Thân chủ Hà Linh ngồi đối diện, thở, chớp mắt và thay đổi tư thế theo cảm xúc. Thân chủ mở lời trước, giống một buổi tham vấn thật."</div>
+      </div>
+      <figure><img src="anh/12-sv-phong-tham-van.jpg" alt=""></figure>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 9</span><h4>Trò chuyện với thân chủ AI (5 lượt)</h4><span class="time">≈ 2 phút 30 giây</span></div>
+    <div class="scene-body full">
+      <div>
+        <h5>Thao tác</h5>
+        <p class="small">Lần lượt gõ (hoặc dán) từng câu dưới đây vào ô <b>Nhập lời nói của bạn</b> ở góc dưới bên phải, bấm nút <b>Gửi</b> (mũi tên) hoặc phím <span class="kbd">Enter</span>. <b>Chờ thân chủ trả lời xong</b> (chữ chạy hết, ô nhập mở lại) rồi mới gửi câu tiếp. Mỗi lượt dừng 3 đến 4 giây để người xem đọc. Để ý nhân vật 3D đổi tư thế theo cảm xúc.</p>
+        <table class="line-tbl">
+          <tr><th>#</th><th style="width:44%">Sinh viên gõ</th><th>Thân chủ Hà Linh sẽ trả lời (gần đúng)</th></tr>
+          <tr><td>1</td><td class="stu">Chào em, hôm nay em đang cảm thấy thế nào?</td><td>Nghe bạn nói vậy em thấy được lắng nghe hơn. Linh sợ nhất là làm mẹ thất vọng.</td></tr>
+          <tr><td>2</td><td class="stu">Anh thấy đó là một nỗi lo rất lớn. Điều gì khiến em lo nhất?</td><td>Dạ, em đang khá lo vì Linh mất ngủ, học không vào và sợ gia đình thất vọng. Nói ra được với bạn cũng không dễ với em.</td></tr>
+          <tr><td>3</td><td class="stu">Khi gặp chuyện khó, em có ai để tâm sự không?</td><td>Em có một người thân có thể nói chuyện, nhưng em ngại làm phiền và sợ mọi người thất vọng.</td></tr>
+          <tr><td>4</td><td class="stu">Em nói em ngại làm phiền người thân. Em có thể kể thêm về điều đó không?</td><td>Em chưa biết phải trả lời thế nào. Có lẽ em cần thêm một chút thời gian để nói rõ điều mình đang trải qua.</td></tr>
+          <tr><td>5</td><td class="stu">Không sao đâu, em cứ từ từ. Anh vẫn ở đây với em.</td><td>Dạ, em nghe bạn nói. Em vẫn còn hơi khó diễn đạt, nhưng em muốn kể tiếp nếu bạn có thể lắng nghe.</td></tr>
+        </table>
+        <h5>Lời dẫn (đọc trong lúc trò chuyện)</h5>
+        <div class="say">"Sinh viên trò chuyện bằng cách gõ hoặc nói qua micro, thân chủ trả lời bằng chữ trên màn hình. Khi sinh viên hỏi về cảm xúc và thể hiện sự thấu cảm, thân chủ dần mở lòng, chia sẻ cả nỗi sợ làm mẹ thất vọng. Khi câu hỏi chưa chạm tới, thân chủ ngập ngừng, đúng như một thân chủ thật."</div>
+        <div class="box warn small" style="margin-bottom:0"><span class="t">Nếu câu trả lời khác bảng trên</span>Thứ tự câu hỏi quyết định câu trả lời. Nếu bạn gửi nhầm câu hoặc đổi thứ tự, chỉ cần tiếp tục. Nếu muốn quay lại cảnh này cho đẹp, xem mục 8 dòng "Muốn quay lại một phiên từ đầu".</div>
+      </div>
+    </div>
+  </div>
+  <div class="two">
+    <figure><img src="anh/13-sv-dang-tro-chuyen.jpg" alt=""><figcaption>Sau lượt 3</figcaption></figure>
+    <figure><img src="anh/14-sv-hoi-thoai-day-du.jpg" alt=""><figcaption>Sau lượt 5</figcaption></figure>
+  </div>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 10</span><h4>Chế độ 2D cho máy yếu, rồi kết thúc phiên</h4><span class="time">≈ 30 giây</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol><li>Bấm nút <b>2D</b> ở góc trên bên phải của căn phòng. Căn phòng chuyển sang ảnh tĩnh nhẹ, hội thoại giữ nguyên.</li><li>Bấm <b>3D</b> để quay lại.</li><li>Bấm <b>Kết thúc phiên</b> (nút góc trên của khung hội thoại). Khung xác nhận hiện ra, bấm <b>Kết thúc phiên</b> màu xanh.</li></ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Máy cấu hình yếu có thể chuyển sang chế độ 2D bất cứ lúc nào mà không mất cuộc trò chuyện. Khi xong, sinh viên kết thúc phiên, hội thoại được lưu và báo cáo được tạo tự động."</div>
+      </div>
+      <figure><img src="anh/16-sv-xac-nhan-ket-thuc.jpg" alt=""></figure>
+    </div>
+  </div>
+
+  <h3>Phần D. Báo cáo, phản tư và nộp bài</h3>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 11</span><h4>Báo cáo sau phiên</h4><span class="time">≈ 60 giây</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol><li>Trang tự chuyển sang <b>Báo cáo</b>. Nếu đang hiện "Đang tạo báo cáo", chờ vài giây.</li><li>Chỉ chuột vào khối <b>Đánh giá theo kỹ năng</b>: mỗi kỹ năng có mức đánh giá và câu dẫn chứng.</li><li>Cuộn qua <i>Tóm tắt phiên</i>, <i>Điểm làm tốt</i>, <i>Điểm cần cải thiện</i>, <i>Mục tiêu lần sau</i>.</li></ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Ngay sau phiên, sinh viên nhận báo cáo sáu nhóm kỹ năng: lắng nghe, câu hỏi mở, phản hồi cảm xúc, tóm tắt, tôn trọng quyền tự quyết và đạo đức an toàn. Mỗi nhận xét đều dẫn lại đúng câu sinh viên đã nói, không phải lời khen chung chung."</div>
+      </div>
+      <figure><img src="anh/17-sv-bao-cao.jpg" alt=""></figure>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 12</span><h4>Xem lại toàn bộ hội thoại</h4><span class="time">≈ 20 giây · có thể bỏ</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol><li>Bấm nút <b>Xem transcript</b> ở góc trên của báo cáo.</li><li>Cuộn chậm qua hội thoại có đánh số lượt và thời gian.</li><li>Bấm <b>‹ Báo cáo</b> ở góc trên trái để quay lại.</li></ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Toàn bộ cuộc trò chuyện được lưu lại để sinh viên và giảng viên đọc lại từng lượt."</div>
+      </div>
+      <figure><img src="anh/19-sv-transcript.jpg" alt=""></figure>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 13</span><h4>Viết phản tư và nộp bài</h4><span class="time">≈ 40 giây</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol>
+          <li>Ở trang báo cáo, bấm <b>Viết phản tư</b>.</li>
+          <li>Câu 1 gõ: <code style="white-space:normal">Em mở đầu tốt và dùng câu hỏi mở để thân chủ kể nhiều hơn.</code></li>
+          <li>Câu 2 gõ: <code style="white-space:normal">Lần sau em sẽ phản hồi cảm xúc rõ hơn và tóm tắt lại ý của thân chủ.</code></li>
+          <li>Bấm <b>Hoàn thành và nộp bài</b>. Trang báo đã nộp cho giảng viên.</li>
+        </ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Sinh viên tự phản tư về phiên của mình rồi nộp bài cho giảng viên chỉ bằng một nút bấm."</div>
+      </div>
+      <figure><img src="anh/20-sv-phan-tu.jpg" alt=""></figure>
+    </div>
+  </div>
+
+  <h3>Phần E. Giảng viên chấm bài, sinh viên nhận nhận xét</h3>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 14</span><h4>Giảng viên theo dõi tiến độ</h4><span class="time">≈ 30 giây</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol><li>Đăng xuất, đăng nhập lại vai <b>Giảng viên</b>.</li><li>Ở Tổng quan, bài vừa giao hiện <i>Đã nộp 1/2</i> và <i>Chờ xem xét 1</i>. Bấm <b>Xem tiến độ</b>.</li><li>Sinh viên Trần Minh Anh ở trạng thái <i>Đã nộp</i>, bấm <b>Xem xét</b>.</li></ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Giảng viên thấy ngay ai đã nộp, ai chưa bắt đầu, nộp đúng hạn hay trễ hạn, và có thể xuất danh sách ra tệp CSV."</div>
+      </div>
+      <figure><img src="anh/23-gv-tien-do-bai.jpg" alt=""></figure>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 15</span><h4>Chấm điểm và nhận xét</h4><span class="time">≈ 60 giây</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol>
+          <li>Bên trái là hội thoại, bên phải là đánh giá theo kỹ năng. Bấm vào một câu dẫn chứng để thấy hội thoại nhảy tới đúng lượt đó.</li>
+          <li>Ở vài kỹ năng, mở ô <b>Giảng viên đánh giá</b> và chọn một mức.</li>
+          <li>Cuộn xuống ô <b>Nhận xét chung</b>, gõ: <code style="white-space:normal">Em mở đầu tự nhiên và hỏi đúng cảm xúc của thân chủ. Lần sau hãy tóm tắt lại ý chính trước khi kết thúc.</code></li>
+          <li>Bấm <b>Lưu nhận xét</b> ở góc trên phải.</li>
+        </ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"AI chỉ đề xuất, giảng viên mới là người quyết định. Đánh giá của giảng viên được lưu riêng, không ghi đè lên đánh giá của AI."</div>
+      </div>
+      <figure><img src="anh/24-gv-xem-bai-nop.jpg" alt=""></figure>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 16</span><h4>Thống kê lớp, sinh viên nhận nhận xét</h4><span class="time">≈ 30 giây · có thể bỏ</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol><li>Bấm <b>Lớp và thống kê</b> để xem phân bố kỹ năng của lớp.</li><li>(Tùy chọn) Đăng nhập lại <code>sinhvien1</code>, vào <b>Lịch sử thực hành</b>, mở phiên vừa làm để thấy khối <b>Nhận xét của giảng viên</b>.</li></ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Giảng viên nhìn được bức tranh kỹ năng của cả lớp để điều chỉnh bài giảng. Sinh viên nhận được nhận xét ngay trong báo cáo của mình."</div>
+      </div>
+      <figure><img src="anh/27-sv-nhan-xet-giang-vien.jpg" alt=""></figure>
+    </div>
+  </div>
+
+  <h3>Phần F. Quản trị viên và kết thúc</h3>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 17</span><h4>Quản trị hệ thống</h4><span class="time">≈ 60 giây</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol>
+          <li>Đăng xuất, đăng nhập vai <b>Quản trị viên</b>: <code>admin</code> / <code>LabFourTAdmin2026</code>.</li>
+          <li><b>Tài khoản</b>: danh sách người dùng, nút <i>Tạo tài khoản</i> và <i>Nhập CSV</i>.</li>
+          <li>Lần lượt bấm <b>Lớp</b>, <b>Dữ liệu phiên</b>, <b>Cấu hình</b>, <b>Trạng thái hệ thống</b>, <b>Nhật ký</b>, mỗi trang dừng 3 đến 5 giây.</li>
+        </ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Quản trị viên quản lý tài khoản và lớp, cấu hình thời hạn lưu dữ liệu. Dữ liệu cũ không bị xóa vĩnh viễn mà chuyển trạng thái. Mọi thao tác quan trọng đều được ghi nhật ký, và trang trạng thái cho biết các dịch vụ có đang chạy tốt hay không."</div>
+      </div>
+      <figure><img src="anh/33-qtv-nhat-ky.jpg" alt=""></figure>
+    </div>
+  </div>
+  <div class="scene">
+    <div class="scene-head"><span class="n">Cảnh 18</span><h4>Kết thúc video</h4><span class="time">≈ 15 giây</span></div>
+    <div class="scene-body">
+      <div>
+        <h5>Thao tác</h5>
+        <ol><li>Bấm <b>Trang bài viết</b> ở cuối menu để quay về trang công khai.</li><li>Dừng hình 3 giây ở phần đầu trang.</li></ol>
+        <h5>Lời dẫn</h5>
+        <div class="say">"Lab FourT: một căn phòng để luyện lắng nghe. Sinh viên được thực hành an toàn, nhận phản hồi có dẫn chứng; giảng viên theo dõi và đồng hành cùng từng sinh viên."</div>
+      </div>
+      <figure><img src="anh/01-trang-chu-blog.jpg" alt=""></figure>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 8 ================= -->
+<section class="chapter">
+  <h2>8. Khi gặp lỗi</h2>
+  <p>Hầu hết sự cố được giải quyết bằng cách <b>chạy lại <span class="file">CHAY-DEMO.bat</span></b>. Cửa sổ đen luôn ghi rõ <b>CHƯA CHẠY ĐƯỢC</b> kèm <b>Cách xử lý</b> bằng chữ vàng.</p>
+  <table>
+    <tr><th style="width:34%">Hiện tượng</th><th>Cách xử lý</th></tr>
+    <tr><td>"Máy chưa cài Docker Desktop"</td><td>Cài Docker Desktop theo mục 2.2, khởi động lại máy, rồi chạy lại <span class="file">CHAY-DEMO.bat</span>.</td></tr>
+    <tr><td>"Docker Desktop mở quá lâu" hoặc "chưa chạy"</td><td>Mở Docker Desktop từ menu Start. Nếu có hộp thoại điều khoản, bấm <b>Accept</b>. Nếu báo cập nhật WSL, làm theo hướng dẫn trên màn hình. Chờ "Engine running" rồi chạy lại.</td></tr>
+    <tr><td>Docker báo lỗi về <b>WSL</b> hoặc <b>Virtualization</b> (ảo hóa)</td><td>Máy cần bật ảo hóa trong BIOS. Việc này cần người hiểu máy tính hỗ trợ một lần. Sau đó mọi thứ chạy bình thường.</td></tr>
+    <tr><td>"Cổng 80 đang bị chương trình … dùng"</td><td>Tắt chương trình được nêu tên (thường là Skype, IIS, XAMPP, một web khác chạy trong Docker), rồi chạy lại. Nếu là ứng dụng Docker khác: mở Docker Desktop → <b>Containers</b> → bấm nút <b>Stop</b> ở ứng dụng đó.</td></tr>
+    <tr><td>"Build hoặc khởi động không thành công"</td><td>Kiểm tra Internet (lần đầu cần tải khoảng 1 GB) và ổ đĩa còn trống ít nhất 10 GB. Chạy lại. Mạng chậm có thể mất tới 20 phút.</td></tr>
+    <tr><td>"Web chưa phản hồi sau 5 phút"</td><td>Chạy <span class="file">DUNG-DEMO.bat</span> rồi <span class="file">CHAY-DEMO.bat</span>. Nếu vẫn lỗi, khởi động lại máy rồi thử lại.</td></tr>
+    <tr><td>Cửa sổ đen hiện rồi tắt ngay</td><td>Bạn có thể đang chạy bên trong tệp zip. Giải nén ra thư mục trước (mục 2.3).</td></tr>
+    <tr><td>Trình duyệt báo "Không thể truy cập trang web"</td><td>Kiểm tra cửa sổ đen đã báo XONG chưa. Gõ đúng <code>localhost</code> (không có "www", không thêm "https"). Đợi 30 giây rồi bấm <span class="kbd">F5</span>.</td></tr>
+    <tr><td>Trình duyệt tự đổi sang <code>https://localhost</code> và báo lỗi</td><td>Gõ đầy đủ <code>http://localhost</code>. Nếu vẫn bị đổi, mở cửa sổ ẩn danh (<span class="kbd">Ctrl</span> + <span class="kbd">Shift</span> + <span class="kbd">N</span>) và vào lại.</td></tr>
+    <tr><td>Đăng nhập báo sai mật khẩu</td><td>Kiểm tra chữ hoa, chữ thường và đúng trang vai trò (giảng viên đăng nhập ở trang Giảng viên). Xem bảng tài khoản ở mục 3.4.</td></tr>
+    <tr><td>Phòng 3D giật, hiện cảnh báo "Phòng 3D đang chạy chậm"</td><td>Đóng bớt chương trình khác, cắm sạc. Hoặc bấm <b>2D</b> trong phòng: hội thoại và báo cáo vẫn đầy đủ.</td></tr>
+    <tr><td>Báo cáo hiện "Đang tạo" mãi</td><td>Chờ khoảng 30 giây và tải lại trang (<span class="kbd">F5</span>). Nếu vẫn vậy, chạy lại <span class="file">CHAY-DEMO.bat</span>, báo cáo sẽ được tạo tiếp.</td></tr>
+    <tr><td>Trang chủ sinh viên không có nút "Bắt đầu thực hành" ở bài được giao</td><td>Sinh viên còn một phiên chưa kết thúc. Bấm <b>Quay lại phiên</b> để kết thúc phiên đó trước.</td></tr>
+    <tr><td>Muốn quay lại một phiên từ đầu</td><td>Kết thúc phiên đang làm, rồi vào Thư viện ca chọn lại ca đó để mở phiên mới. Muốn mọi thứ sạch như ban đầu: chạy <span class="file">XOA-DU-LIEU-DEMO.bat</span> rồi <span class="file">CHAY-DEMO.bat</span>.</td></tr>
+    <tr><td>Máy chậm sau khi dùng xong</td><td>Chạy <span class="file">DUNG-DEMO.bat</span>. Có thể thoát hẳn Docker Desktop (chuột phải biểu tượng cá voi → <b>Quit Docker Desktop</b>).</td></tr>
+  </table>
+  <div class="box">
+    <span class="t">Khi cần nhờ người hỗ trợ</span>
+    Chụp màn hình cửa sổ đen (phím <span class="kbd">Win</span> + <span class="kbd">Shift</span> + <span class="kbd">S</span>) ở chỗ có chữ đỏ <b>CHƯA CHẠY ĐƯỢC</b> và gửi cho người bàn giao gói demo.
+  </div>
+</section>
+
+<!-- ================= 9 ================= -->
+<section class="chapter">
+  <h2>9. Phụ lục</h2>
+  <h3>9.1 Tài khoản demo</h3>
+  <table class="acc">
+    <tr><th>Vai trò</th><th>Tên đăng nhập</th><th>Mật khẩu</th><th>Trang đăng nhập</th></tr>
+    <tr><td>Sinh viên</td><td>sinhvien1</td><td>LabFourT2026</td><td style="font-family:inherit;font-weight:400">Đăng nhập → Sinh viên</td></tr>
+    <tr><td>Sinh viên</td><td>sinhvien2</td><td>LabFourT2026</td><td style="font-family:inherit;font-weight:400">Đăng nhập → Sinh viên</td></tr>
+    <tr><td>Giảng viên</td><td>giangvien</td><td>LabFourT2026</td><td style="font-family:inherit;font-weight:400">Đăng nhập → Giảng viên</td></tr>
+    <tr><td>Quản trị viên</td><td>admin</td><td>LabFourTAdmin2026</td><td style="font-family:inherit;font-weight:400">Đăng nhập → Quản trị viên</td></tr>
+  </table>
+
+  <h3>9.2 Câu thoại để chép nhanh</h3>
+  <p class="small muted">Mở Notepad, chép sẵn các dòng dưới đây. Khi quay, bôi đen một dòng, <span class="kbd">Ctrl</span> + <span class="kbd">C</span>, rồi bấm vào ô nhập trong web và <span class="kbd">Ctrl</span> + <span class="kbd">V</span>.</p>
+  <div class="box" style="font-size:10pt">
+    <b>Giao bài (cảnh 4)</b><br>Bài 1: Lắng nghe thân chủ Hà Linh<br><br>
+    <b>Trò chuyện (cảnh 9), gửi đúng thứ tự</b><br>
+    1. Chào em, hôm nay em đang cảm thấy thế nào?<br>
+    2. Anh thấy đó là một nỗi lo rất lớn. Điều gì khiến em lo nhất?<br>
+    3. Khi gặp chuyện khó, em có ai để tâm sự không?<br>
+    4. Em nói em ngại làm phiền người thân. Em có thể kể thêm về điều đó không?<br>
+    5. Không sao đâu, em cứ từ từ. Anh vẫn ở đây với em.<br><br>
+    <b>Phản tư (cảnh 13)</b><br>
+    Em mở đầu tốt và dùng câu hỏi mở để thân chủ kể nhiều hơn.<br>
+    Lần sau em sẽ phản hồi cảm xúc rõ hơn và tóm tắt lại ý của thân chủ.<br><br>
+    <b>Nhận xét của giảng viên (cảnh 15)</b><br>
+    Em mở đầu tự nhiên và hỏi đúng cảm xúc của thân chủ. Lần sau hãy tóm tắt lại ý chính trước khi kết thúc.
+  </div>
+  <div class="box warn small">
+    <span class="t">Gợi ý khi muốn tự nghĩ câu thoại</span>
+    Thân chủ AI của bản demo mở lòng khi câu của bạn có từ về cảm xúc (<i>cảm thấy, cảm xúc, lo nhất, sợ nhất, trong lòng</i>) hoặc thấu cảm (<i>nghe, hiểu, khó khăn, vất vả, lo lắng, buồn, mệt</i>). Hỏi về <i>ai, bạn bè, gia đình, giúp đỡ</i> thì thân chủ nói về người hỗ trợ. Câu hỏi không có những từ này làm thân chủ ngập ngừng.
+  </div>
+
+  <h3>9.3 Chạy trên máy Mac</h3>
+  <ol class="steps">
+    <li>Cài <b>Docker Desktop for Mac</b> (chọn đúng loại chip Apple hoặc Intel) từ <code>docker.com/products/docker-desktop</code>, mở lên và chờ "Engine running".</li>
+    <li>Giải nén <span class="file">LabFourT-demo.zip</span> (bấm đúp vào tệp).</li>
+    <li>Mở ứng dụng <b>Terminal</b>, gõ <code>cd </code> (có dấu cách), kéo thư mục <b>LabFourT-demo</b> thả vào cửa sổ Terminal, bấm <span class="kbd">Enter</span>.</li>
+    <li>Gõ <code>bash chay-demo.command</code> rồi bấm <span class="kbd">Enter</span>. Các bước và tài khoản giống hệt bản Windows.</li>
+    <li>Tắt: <code>bash dung-demo.command</code>. Xóa sạch dữ liệu: <code>bash dung-demo.command --xoa-du-lieu</code>.</li>
+  </ol>
+
+  <h3>9.4 Dành cho người kỹ thuật (không bắt buộc)</h3>
+  <ul class="small">
+    <li>Bản demo chạy bằng Docker Compose với tên dự án riêng <code>lab-fourt-demo</code> và cơ sở dữ liệu riêng, dùng tệp <code>deploy/compose.yaml</code>. Cấu hình nằm ở <code>deploy/demo/.env</code> (tự tạo từ <code>deploy/demo/demo.env.template</code> ở lần chạy đầu).</li>
+    <li>Thân chủ AI mặc định là <code>AI_PROVIDER=simple</code> (chạy trên máy, theo luật). Muốn dùng dịch vụ AI thật tương thích OpenAI: đặt <code>AI_PROVIDER=http</code>, <code>AI_PROTOCOL=openai</code>, điền <code>AI_BASE_URL</code>, <code>AI_MODEL</code>, <code>AI_API_KEY</code> trong <code>deploy/demo/.env</code>, rồi chạy lại CHAY-DEMO. Khóa AI chỉ nằm trên máy chạy demo.</li>
+    <li>Bản demo bỏ bước bắt đổi mật khẩu ở lần đăng nhập đầu cho bốn tài khoản mẫu để quay video liền mạch. Bản triển khai thật vẫn bắt đổi mật khẩu.</li>
+    <li>Web chỉ chạy HTTP tại <code>http://localhost</code> trên chính máy đó, không mở ra mạng ngoài. Không dùng cấu hình demo cho máy chủ thật.</li>
+  </ul>
+</section>
+
+</body>
+</html>

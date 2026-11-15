@@ -6,7 +6,7 @@
     "node": ">=24.10.0 <25"
   },
   "scripts": {
-    "dev": "pnpm --parallel --filter @lab-fourt/api --filter @lab-fourt/web dev",
+    "dev": "pnpm --parallel --filter @lab-fourt/api --filter @lab-fourt/web \"/^dev(:worker)?$/\"",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test",

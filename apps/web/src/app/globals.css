@@ -3,6 +3,7 @@
 @import 'tailwindcss/utilities.css' layer(utilities);
 @import '../styles/prototype.css';
 @import '../styles/blog.css';
+@import '../styles/transitions.css';
 
 /* Design token của prototype dùng được như lớp Tailwind, ví dụ bg-card-2, text-ink-2, rounded-m */
 @theme inline {

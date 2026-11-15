@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { SKILL_CODES, SKILL_LABELS, type CaseSummary, type PracticeStatus, type SkillCode } from '@lab-fourt/shared';
+import { Swap, swap } from '@/components/swap';
 import { PageHead } from '@/components/ui';
 import { DIFFICULTY_LABELS, useCases } from '@/lib/sessions';
 import { roomImage } from '@/features/room/RoomView';
@@ -34,11 +35,11 @@ export default function LibraryPage() {
       <PageHead title="Thư viện ca" sub="Chọn một ca để luyện tập. Bạn có thể thực hành bất cứ lúc nào." />
       <div className="stack" style={{ gap: 10 }}>
         <div className="chips" role="group" aria-label="Lọc theo độ khó">
-          <button type="button" className="chip" aria-pressed={difficulty === 'ALL'} onClick={() => setDifficulty('ALL')}>
+          <button type="button" className="chip" aria-pressed={difficulty === 'ALL'} onClick={() => swap(() => setDifficulty('ALL'))}>
             Mọi độ khó
           </button>
           {[1, 2, 3].map((d) => (
-            <button key={d} type="button" className="chip" aria-pressed={difficulty === d} onClick={() => setDifficulty(d)}>
+            <button key={d} type="button" className="chip" aria-pressed={difficulty === d} onClick={() => swap(() => setDifficulty(d))}>
               {DIFFICULTY_LABELS[d]}
             </button>
           ))}
@@ -52,7 +53,10 @@ export default function LibraryPage() {
             className="select"
             style={{ width: 'auto' }}
             value={skill}
-            onChange={(e) => setSkill(e.target.value as Filter<SkillCode>)}
+            onChange={(e) => {
+              const v = e.target.value as Filter<SkillCode>;
+              swap(() => setSkill(v));
+            }}
           >
             <option value="ALL">Mọi kỹ năng</option>
             {SKILL_CODES.map((s) => (
@@ -69,7 +73,10 @@ export default function LibraryPage() {
             className="select"
             style={{ width: 'auto' }}
             value={status}
-            onChange={(e) => setStatus(e.target.value as Filter<PracticeStatus>)}
+            onChange={(e) => {
+              const v = e.target.value as Filter<PracticeStatus>;
+              swap(() => setStatus(v));
+            }}
           >
             <option value="ALL">Mọi trạng thái</option>
             {(Object.keys(STATUS) as PracticeStatus[]).map((s) => (
@@ -83,6 +90,8 @@ export default function LibraryPage() {
 
       {cases.isPending && <p className="muted">Đang tải danh sách ca...</p>}
       {cases.isError && <p role="alert">Không tải được thư viện ca. Hãy tải lại trang.</p>}
+      {/* Đổi bộ lọc thì danh sách cũ mờ đi, danh sách mới trượt vào */}
+      <Swap id={`${difficulty}-${skill}-${status}`}>
       {cases.data && !shown.length && (
         <section className="panel">
           <p className="muted">
@@ -120,6 +129,7 @@ export default function LibraryPage() {
           ))}
         </div>
       )}
+      </Swap>
     </>
   );
 }

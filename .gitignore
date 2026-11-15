@@ -1,6 +1,7 @@
 node_modules/
 .next/
 dist/
+dist-worker/
 coverage/
 test-results/
 playwright-report/
@@ -9,3 +10,5 @@ playwright-report/
 .env.*
 !.env.example
 .DS_Store
+# Gói bàn giao do deploy/demo/dong-goi.py tạo ra
+/ban-giao/

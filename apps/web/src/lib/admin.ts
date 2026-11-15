@@ -1,6 +1,6 @@
 'use client';
 
-import { useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
+import { keepPreviousData, useMutation, useQuery, useQueryClient, type QueryKey } from '@tanstack/react-query';
 import type {
   AdminClass,
   AdminSessionRow,
@@ -75,8 +75,13 @@ export const useRemoveClassMember = () =>
   ]);
 
 // ---------- Dữ liệu phiên ----------
+/** Đổi bộ lọc hoặc gõ tìm kiếm thì giữ bảng cũ (làm mờ) tới khi có kết quả mới, không nháy bảng trống */
 export const useAdminSessions = (recordStatus: string, q: string) =>
-  useQuery({ queryKey: ['admin', 'sessions', recordStatus, q], queryFn: () => api<AdminSessionRow[]>(`/admin/sessions${qs({ recordStatus, q })}`) });
+  useQuery({
+    queryKey: ['admin', 'sessions', recordStatus, q],
+    queryFn: () => api<AdminSessionRow[]>(`/admin/sessions${qs({ recordStatus, q })}`),
+    placeholderData: keepPreviousData,
+  });
 export const useSetRecordStatus = () =>
   useAction(
     ({ id, ...body }: RecordStatusInput & { id: string }) => api<void>(`/admin/sessions/${id}/record-status`, { method: 'PATCH', body }),

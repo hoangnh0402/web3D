@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { AlertTriangle, Download, Info, Table2, UserMinus } from 'lucide-react';
 import { SKILL_LABELS, type ClassSkillStats } from '@lab-fourt/shared';
 import { Modal } from '@/components/modal';
+import { Swap, swap } from '@/components/swap';
 import { Field, Notice, PageHead } from '@/components/ui';
 import { ApiRequestError } from '@/lib/api';
 import { useClassMemberActions, useClassMembers, useClassStats, useLecturerClasses } from '@/lib/assignments';
@@ -217,17 +218,17 @@ export default function ClassesPage() {
       {!!classes.data?.length && (
         <div className="chips" role="group" aria-label="Chọn lớp">
           {classes.data.map((c) => (
-            <button key={c.id} type="button" className="chip" aria-pressed={classId === c.id} onClick={() => setPicked(c.id)}>
+            <button key={c.id} type="button" className="chip" aria-pressed={classId === c.id} onClick={() => swap(() => setPicked(c.id))}>
               {c.name} ({c.studentCount})
             </button>
           ))}
         </div>
       )}
       {classId && (
-        <>
+        <Swap id={classId}>
           <Stats key={`s-${classId}`} classId={classId} />
           <Members key={`m-${classId}`} classId={classId} />
-        </>
+        </Swap>
       )}
     </>
   );

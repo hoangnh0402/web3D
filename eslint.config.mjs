@@ -4,7 +4,7 @@ import tseslint from 'typescript-eslint';
 
 /** Cấu hình ESLint dùng chung cho API và packages. apps/web có cấu hình riêng theo Next.js. */
 export default tseslint.config(
-  { ignores: ['**/dist/**', '**/node_modules/**', '**/generated/**', 'apps/web/**', 'docs/**', '**/*.d.ts'] },
+  { ignores: ['**/dist/**', '**/dist-worker/**', '**/node_modules/**', '**/generated/**', 'apps/web/**', 'docs/**', '**/*.d.ts'] },
   js.configs.recommended,
   ...tseslint.configs.recommended,
   {

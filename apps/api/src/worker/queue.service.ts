@@ -10,6 +10,9 @@ import { PGBOSS_SCHEMA, QUEUES } from '../queue/queues';
 /** Báo cáo kẹt ở trạng thái đang xử lý quá lâu (worker bị dừng giữa chừng) thì đưa về hàng chờ */
 const STUCK_MS = 10 * 60_000;
 
+/** Số báo cáo xử lý song song trên một worker và chu kỳ hỏi việc mới */
+export const ASSESSMENT_WORK = { localConcurrency: 4, pollingIntervalSeconds: 1 } as const;
+
 /** Hàng đợi pg-boss chạy trên chính PostgreSQL, schema riêng "pgboss", không cần Redis */
 @Injectable()
 export class QueueService implements OnApplicationBootstrap, OnApplicationShutdown {
@@ -45,7 +48,9 @@ export class QueueService implements OnApplicationBootstrap, OnApplicationShutdo
     });
     // Tạo báo cáo sau phiên. Dịch vụ báo cáo tự thử lại nên hàng đợi không thử lại thêm.
     await this.boss.createQueue(QUEUES.ASSESSMENT, { retryLimit: 0 });
-    await this.boss.work<{ sessionId: string }>(QUEUES.ASSESSMENT, async ([job]) => {
+    // Mặc định pg-boss chỉ lấy một việc mỗi 2 giây. Cả lớp kết thúc phiên cùng lúc thì người cuối chờ rất lâu,
+    // nên chạy song song vài báo cáo và hỏi việc mới mỗi giây.
+    await this.boss.work<{ sessionId: string }>(QUEUES.ASSESSMENT, ASSESSMENT_WORK, async ([job]) => {
       if (!job) return;
       const status = await this.assessments.generate(job.data.sessionId);
       if (status) this.logger.log({ sessionId: job.data.sessionId, status }, 'Đã xử lý báo cáo');

@@ -4,3 +4,6 @@ Caddyfile text eol=lf
 *.Dockerfile text eol=lf
 Dockerfile text eol=lf
 *.yaml text eol=lf
+# Script chạy demo: .command phải xuống dòng kiểu LF (bash), .bat phải CRLF (cmd của Windows)
+*.command text eol=lf
+*.bat text eol=crlf

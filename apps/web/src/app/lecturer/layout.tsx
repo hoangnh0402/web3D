@@ -6,9 +6,9 @@ import { RoleShell, type NavItem } from '@/components/role-shell';
 
 const NAV: NavItem[] = [
   { href: '/lecturer', label: 'Tổng quan', icon: LayoutGrid },
-  { href: '/lecturer/cases', label: 'Ca mô phỏng', icon: BookOpen },
+  { href: '/lecturer/cases', label: 'Ca mô phỏng', short: 'Ca', icon: BookOpen },
   { href: '/lecturer/assign', label: 'Giao bài', icon: CalendarPlus },
-  { href: '/lecturer/classes', label: 'Lớp và thống kê', icon: Users },
+  { href: '/lecturer/classes', label: 'Lớp và thống kê', short: 'Lớp', icon: Users },
 ];
 
 export default function LecturerLayout({ children }: { children: ReactNode }) {
